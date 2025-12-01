@@ -1,34 +1,48 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { useAuth } from './contexts/AuthContext'
+import { Settings } from 'lucide-react'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const { user } = useAuth()
+
+  const handleSettings = () => {
+    // TODO: Implementar navegação para configurações
+    console.log('Abrir configurações')
+  }
+
+  const handleNewEvent = () => {
+    // TODO: Implementar criação de novo evento
+    console.log('Criar novo evento')
+  }
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
+    <div className="app-container">
+      <div className="app-header">
+        <div className="user-info">
+          <p>Olá, <strong>{user?.displayName || user?.email}</strong></p>
+        </div>
+        <button 
+          onClick={handleSettings}
+          className="settings-button"
+          aria-label="Configurações"
+        >
+          <Settings size={20} />
         </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
       </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+      
+      <div className="app-main">
+        <div className="logo-container">
+          {/* Logo da marca será inserida aqui */}
+        </div>
+        
+        <button 
+          onClick={handleNewEvent}
+          className="new-event-button"
+        >
+          NOVO EVENTO
+        </button>
+      </div>
+    </div>
   )
 }
 

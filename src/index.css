@@ -3,9 +3,69 @@
   line-height: 1.5;
   font-weight: 400;
 
+  /* Paleta de cores - sem degradê */
+  --color-primary: #4a90e2;
+  --color-primary-dark: #357abd;
+  --color-secondary: #50c878;
+  --color-secondary-dark: #3da05a;
+  --color-error: #e74c3c;
+  --color-error-dark: #c0392b;
+  --color-warning: #f39c12;
+  --color-warning-dark: #d68910;
+  --color-success: #27ae60;
+  --color-success-dark: #1e8449;
+  
+  --color-background: #ffffff;
+  --color-background-dark: #1a1a1a;
+  --color-surface: #f5f5f5;
+  --color-surface-dark: #2d2d2d;
+  
+  --color-text-primary: #212121;
+  --color-text-primary-dark: #ffffff;
+  --color-text-secondary: #757575;
+  --color-text-secondary-dark: #b0b0b0;
+  
+  --color-border: #e0e0e0;
+  --color-border-dark: #404040;
+  --color-shadow: rgba(0, 0, 0, 0.1);
+  --color-shadow-dark: rgba(0, 0, 0, 0.3);
+  --color-primary-alpha: rgba(74, 144, 226, 0.1);
+  --color-error-bg: rgba(231, 76, 60, 0.1);
+  --color-error-border: rgba(231, 76, 60, 0.3);
+
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+
+  /* Sizing */
+  --auth-card-width: 420px;
+  --app-max-width: 1200px;
+  --button-icon-size: 40px;
+  --logo-size: 200px;
+
+  /* Border radius */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+
+  /* Font sizes */
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.5rem;
+  --font-size-2xl: 2rem;
+
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+
+  /* Opacity */
+  --opacity-disabled: 0.6;
+
   color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  color: var(--color-text-primary);
+  background-color: var(--color-background);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -15,19 +75,29 @@
 
 a {
   font-weight: 500;
-  color: #646cff;
+  color: var(--color-primary);
   text-decoration: inherit;
 }
 a:hover {
-  color: #535bf2;
+  color: var(--color-primary-dark);
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow-x: hidden;
 }
 
 body {
-  margin: 0;
-  display: flex;
-  place-items: center;
   min-width: 320px;
-  min-height: 100vh;
+}
+
+#root {
+  height: 100%;
+  width: 100%;
 }
 
 h1 {
@@ -42,27 +112,27 @@ button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: var(--color-primary);
+  color: var(--color-background);
   cursor: pointer;
-  transition: border-color 0.25s;
+  transition: background-color 0.25s;
 }
-button:hover {
-  border-color: #646cff;
-}
+
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
-@media (prefers-color-scheme: light) {
+@media (prefers-color-scheme: dark) {
   :root {
-    color: #213547;
-    background-color: #ffffff;
+    color: var(--color-text-primary-dark);
+    background-color: var(--color-background-dark);
   }
   a:hover {
-    color: #747bff;
+    color: var(--color-primary);
   }
   button {
-    background-color: #f9f9f9;
+    background-color: var(--color-primary);
+    color: var(--color-background-dark);
   }
 }
