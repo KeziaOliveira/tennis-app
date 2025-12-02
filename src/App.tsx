@@ -1,9 +1,11 @@
 import { useAuth } from './contexts/AuthContext'
+import { useNavigate } from 'react-router'
 import { Settings } from 'lucide-react'
 import './App.css'
 
 function App() {
   const { user } = useAuth()
+  const navigate = useNavigate()
 
   const handleSettings = () => {
     // TODO: Implementar navegação para configurações
@@ -11,8 +13,7 @@ function App() {
   }
 
   const handleNewEvent = () => {
-    // TODO: Implementar criação de novo evento
-    console.log('Criar novo evento')
+    navigate('/new-event')
   }
 
   return (

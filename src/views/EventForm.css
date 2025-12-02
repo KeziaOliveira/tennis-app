@@ -1,0 +1,405 @@
+.event-form-container {
+  max-width: var(--app-max-width);
+  margin: 0 auto;
+  padding: var(--spacing-lg);
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.event-form-card {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: var(--spacing-xl);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 2px 8px var(--color-shadow);
+}
+
+.event-form-title {
+  margin: 0 0 var(--spacing-xl) 0;
+  font-size: var(--font-size-2xl);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  text-align: center;
+}
+
+.event-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+}
+
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.form-divider {
+  display: flex;
+  align-items: center;
+  margin: var(--spacing-md) 0;
+  font-weight: 600;
+  font-size: var(--font-size-lg);
+  color: var(--color-text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.form-divider::before,
+.form-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background-color: var(--color-border);
+}
+
+.form-divider span {
+  padding: 0 var(--spacing-md);
+}
+
+.form-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.form-input-group label {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.form-input-group input {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-base);
+  font-family: inherit;
+  color: var(--color-text-primary);
+  background-color: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.form-input-group input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-alpha);
+}
+
+.form-input-group input::placeholder {
+  color: var(--color-text-secondary);
+}
+
+.athlete-pair {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg);
+  background-color: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.athlete-pair-header {
+  font-weight: 600;
+  font-size: var(--font-size-lg);
+  color: var(--color-primary);
+  margin-bottom: var(--spacing-sm);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 2px solid var(--color-primary);
+}
+
+.athlete-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  width: 100%;
+}
+
+.athlete-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.athlete-card:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 2px 4px var(--color-shadow);
+}
+
+.athlete-card-label {
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--spacing-xs);
+}
+
+.athlete-card-inputs {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--spacing-md);
+  width: 100%;
+}
+
+.vs-divider {
+  text-align: center;
+  font-weight: 700;
+  font-size: var(--font-size-xl);
+  color: var(--color-primary);
+  padding: var(--spacing-md) 0;
+  margin: var(--spacing-sm) 0;
+}
+
+.toggle-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.toggle-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md);
+  background-color: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.toggle-label {
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  flex: 1;
+}
+
+.toggle-button {
+  position: relative;
+  width: 50px;
+  height: 28px;
+  padding: 0;
+  background-color: var(--color-border);
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.toggle-button.active {
+  background-color: var(--color-primary);
+}
+
+.toggle-slider {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 24px;
+  height: 24px;
+  background-color: var(--color-background);
+  border-radius: 50%;
+  transition: transform var(--transition-fast);
+  box-shadow: 0 2px 4px var(--color-shadow);
+}
+
+.toggle-button.active .toggle-slider {
+  transform: translateX(22px);
+}
+
+.toggle-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--color-primary-alpha);
+}
+
+.form-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: flex-end;
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--color-border);
+}
+
+.cancel-button,
+.submit-button {
+  padding: var(--spacing-md) var(--spacing-xl);
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  font-family: inherit;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.cancel-button {
+  color: var(--color-text-secondary);
+  background-color: transparent;
+  border: 1px solid var(--color-border);
+}
+
+.cancel-button:hover {
+  background-color: var(--color-surface);
+  border-color: var(--color-text-secondary);
+}
+
+.submit-button {
+  color: var(--color-background);
+  background-color: var(--color-primary);
+}
+
+.submit-button:hover:not(:disabled) {
+  background-color: var(--color-primary-dark);
+}
+
+.submit-button:disabled {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+}
+
+.submit-button:focus,
+.cancel-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--color-primary-alpha);
+}
+
+@media (prefers-color-scheme: dark) {
+  .event-form-card {
+    background-color: var(--color-surface-dark);
+    border-color: var(--color-border-dark);
+    box-shadow: 0 2px 8px var(--color-shadow-dark);
+  }
+
+  .event-form-title {
+    color: var(--color-text-primary-dark);
+  }
+
+  .form-divider {
+    color: var(--color-text-primary-dark);
+  }
+
+  .form-divider::before,
+  .form-divider::after {
+    background-color: var(--color-border-dark);
+  }
+
+  .form-input-group label {
+    color: var(--color-text-secondary-dark);
+  }
+
+  .form-input-group input {
+    color: var(--color-text-primary-dark);
+    background-color: var(--color-background-dark);
+    border-color: var(--color-border-dark);
+  }
+
+  .form-input-group input::placeholder {
+    color: var(--color-text-secondary-dark);
+  }
+
+  .athlete-pair {
+    background-color: var(--color-background-dark);
+    border-color: var(--color-border-dark);
+  }
+
+  .athlete-card {
+    background-color: var(--color-surface-dark);
+    border-color: var(--color-border-dark);
+  }
+
+  .athlete-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: 0 2px 4px var(--color-shadow-dark);
+  }
+
+  .toggle-item {
+    background-color: var(--color-background-dark);
+    border-color: var(--color-border-dark);
+  }
+
+  .toggle-label {
+    color: var(--color-text-primary-dark);
+  }
+
+  .toggle-button {
+    background-color: var(--color-border-dark);
+  }
+
+  .toggle-slider {
+    background-color: var(--color-background-dark);
+  }
+
+  .cancel-button {
+    color: var(--color-text-secondary-dark);
+    border-color: var(--color-border-dark);
+  }
+
+  .cancel-button:hover {
+    background-color: var(--color-surface-dark);
+  }
+
+  .form-actions {
+    border-top-color: var(--color-border-dark);
+  }
+}
+
+@media (max-width: 768px) {
+  .event-form-container {
+    padding: var(--spacing-md);
+  }
+
+  .event-form-card {
+    padding: var(--spacing-lg);
+  }
+
+  .athlete-card-inputs {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .cancel-button,
+  .submit-button {
+    width: 100%;
+  }
+
+  .event-form-title {
+    font-size: var(--font-size-xl);
+  }
+}
+
+@media (max-width: 480px) {
+  .event-form-card {
+    padding: var(--spacing-md);
+  }
+
+  .athlete-pair {
+    padding: var(--spacing-md);
+  }
+
+  .athlete-card {
+    padding: var(--spacing-sm);
+  }
+
+  .athlete-card-inputs {
+    grid-template-columns: 1fr;
+  }
+
+  .toggle-item {
+    padding: var(--spacing-sm);
+  }
+}

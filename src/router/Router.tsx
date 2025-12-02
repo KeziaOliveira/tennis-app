@@ -3,6 +3,8 @@ import { createBrowserRouter, RouterProvider, Navigate } from "react-router";
 import { useAuth } from "../contexts/AuthContext";
 import Auth from "../views/Auth";
 import App from "../App";
+import EventForm from "../views/EventForm";
+import TournamentAdmin from "../views/TournamentAdmin";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
@@ -64,6 +66,22 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <App />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/new-event",
+    element: (
+      <ProtectedRoute>
+        <EventForm />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/tournament/:eventId",
+    element: (
+      <ProtectedRoute>
+        <TournamentAdmin />
       </ProtectedRoute>
     ),
   },
