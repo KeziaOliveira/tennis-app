@@ -56,6 +56,155 @@
   line-height: 1.5;
 }
 
+.athletes-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  width: 100%;
+}
+
+.athlete-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm);
+}
+
+.tennis-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background-color: transparent;
+  border: 2px solid var(--color-border);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+.tennis-button:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.tennis-button.active {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-background);
+}
+
+.tennis-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--color-primary-alpha);
+}
+
+.athlete-name {
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  color: var(--color-text-primary);
+  flex: 1;
+}
+
+.score-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--color-border);
+}
+
+.score-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  background-color: var(--color-primary);
+  border: 2px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  color: var(--color-background);
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  font-family: inherit;
+  line-height: 1;
+}
+
+.score-button:hover:not(:disabled) {
+  background-color: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+  transform: scale(1.05);
+}
+
+.score-button:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.score-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--color-primary-alpha);
+}
+
+.score-button:disabled {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+  transform: none;
+}
+
+.score-display {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+  font-family: "Courier New", monospace;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--color-background);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  min-width: 60px;
+  text-align: center;
+}
+
+.games-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--color-border);
+}
+
+.games-label {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.games-display {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+  font-family: "Courier New", monospace;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background-color: var(--color-background);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  min-width: 50px;
+  text-align: center;
+}
+
 .timer-section {
   display: flex;
   flex-direction: column;
@@ -97,6 +246,39 @@
   justify-content: center;
 }
 
+.change-athlete-control {
+  margin-top: var(--spacing-md);
+  display: flex;
+  justify-content: center;
+}
+
+.change-button {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  font-family: inherit;
+  color: var(--color-background);
+  background-color: var(--color-secondary);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.change-button:hover:not(:disabled) {
+  background-color: var(--color-secondary-dark);
+}
+
+.change-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(80, 200, 120, 0.2);
+}
+
+.change-button:disabled {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+}
+
 .timer-button {
   padding: var(--spacing-sm) var(--spacing-md);
   font-size: var(--font-size-sm);
@@ -129,43 +311,6 @@
 
 .error-message {
   color: var(--color-error);
-}
-
-@media (prefers-color-scheme: dark) {
-  .tournament-title {
-    color: var(--color-text-primary-dark);
-  }
-
-  .team-section {
-    background-color: var(--color-surface-dark);
-    border-color: var(--color-border-dark);
-  }
-
-  .team-names {
-    color: var(--color-text-primary-dark);
-  }
-
-  .team-label {
-    color: var(--color-text-secondary-dark);
-  }
-
-  .timer-section {
-    background-color: var(--color-surface-dark);
-    border-color: var(--color-border-dark);
-  }
-
-  .timer-label {
-    color: var(--color-text-secondary-dark);
-  }
-
-  .timer-display {
-    background-color: var(--color-background-dark);
-    border-color: var(--color-primary);
-  }
-
-  .tournament-header {
-    border-bottom-color: var(--color-border-dark);
-  }
 }
 
 @media (max-width: 968px) {

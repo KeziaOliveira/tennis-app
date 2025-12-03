@@ -1,4 +1,4 @@
-import { collection, addDoc, doc, getDoc, Timestamp } from "firebase/firestore";
+import { collection, addDoc, doc, getDoc, query, where, getDocs, Timestamp } from "firebase/firestore";
 import { db } from "../../config/firebase";
 import { getCurrentUser } from "../auth/firebaseAuth";
 
@@ -58,5 +58,50 @@ export const getEvent = async (eventId: string): Promise<EventDocument | null> =
     return null;
   } catch (error: any) {
     throw new Error(`Erro ao buscar evento: ${error.message}`);
+  }
+};
+
+export const getUserEvents = async (): Promise<EventDocument[]> => {
+  try {
+    const user = getCurrentUser();
+    if (!user) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    const q = query(
+      collection(db, "events"),
+      where("createdBy", "==", user.uid)
+    );
+
+    const querySnapshot = await getDocs(q);
+    const events: EventDocument[] = [];
+
+    querySnapshot.forEach((doc) => {
+      events.push({
+        id: doc.id,
+        ...doc.data(),
+      } as EventDocument);
+    });
+
+    // Ordena por data de criação (mais recente primeiro)
+    events.sort((a, b) => {
+      const getTimestamp = (timestamp: any): number => {
+        if (timestamp?.toDate) {
+          return timestamp.toDate().getTime();
+        }
+        if (timestamp instanceof Date) {
+          return timestamp.getTime();
+        }
+        return 0;
+      };
+      
+      const dateA = getTimestamp(a.createdAt);
+      const dateB = getTimestamp(b.createdAt);
+      return dateB - dateA;
+    });
+
+    return events;
+  } catch (error: any) {
+    throw new Error(`Erro ao buscar eventos: ${error.message}`);
   }
 };

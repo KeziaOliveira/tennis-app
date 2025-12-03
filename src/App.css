@@ -104,26 +104,81 @@
   cursor: not-allowed;
 }
 
-@media (prefers-color-scheme: dark) {
-  .app-header {
-    background-color: var(--color-surface-dark);
-    border-color: var(--color-border-dark);
-  }
+.events-section {
+  width: 100%;
+  max-width: 600px;
+  margin-bottom: var(--spacing-xl);
+}
 
-  .user-info {
-    color: var(--color-text-primary-dark);
-  }
+.events-title {
+  font-size: var(--font-size-xl);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-md) 0;
+  text-align: center;
+}
 
-  .settings-button {
-    color: var(--color-text-secondary-dark);
-    border-color: var(--color-border-dark);
-  }
+.events-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
 
-  .settings-button:hover {
-    background-color: var(--color-surface-dark);
-    color: var(--color-primary);
-    border-color: var(--color-primary);
-  }
+.event-card {
+  padding: var(--spacing-md);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.event-card:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 2px 8px var(--color-shadow);
+  transform: translateY(-2px);
+}
+
+.event-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+}
+
+.event-card-title {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+  flex: 1;
+}
+
+.event-card-date {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.event-card-preview {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.events-loading,
+.events-error,
+.events-empty {
+  text-align: center;
+  padding: var(--spacing-lg);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-lg);
+}
+
+.events-error {
+  color: var(--color-error);
 }
 
 @media (max-width: 768px) {
@@ -144,5 +199,19 @@
   .new-event-button {
     font-size: var(--font-size-base);
     padding: var(--spacing-sm) var(--spacing-lg);
+  }
+
+  .events-section {
+    max-width: 100%;
+  }
+
+  .event-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-xs);
+  }
+
+  .event-card-date {
+    font-size: var(--font-size-xs);
   }
 }

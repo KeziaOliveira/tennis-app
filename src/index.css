@@ -51,6 +51,7 @@
   --radius-md: 8px;
 
   /* Font sizes */
+  --font-size-xs: 0.75rem;
   --font-size-sm: 0.875rem;
   --font-size-base: 1rem;
   --font-size-lg: 1.125rem;
@@ -63,7 +64,7 @@
   /* Opacity */
   --opacity-disabled: 0.6;
 
-  color-scheme: light dark;
+  color-scheme: light;
   color: var(--color-text-primary);
   background-color: var(--color-background);
 
@@ -121,18 +122,4 @@ button {
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    color: var(--color-text-primary-dark);
-    background-color: var(--color-background-dark);
-  }
-  a:hover {
-    color: var(--color-primary);
-  }
-  button {
-    background-color: var(--color-primary);
-    color: var(--color-background-dark);
-  }
 }
