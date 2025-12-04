@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router";
-import { Circle } from "lucide-react";
+import { Circle, ChevronLeft, ChevronRight } from "lucide-react";
 import { getEvent, type EventDocument } from "../services/events/eventService";
 import "./TournamentAdmin.css";
 
@@ -46,7 +46,7 @@ interface ScoreControlsProps {
 
 const ScoreControls = ({ score, onIncrement, onDecrement }: ScoreControlsProps) => {
   const formatScore = (score: number): string => {
-    return score === 0 ? "00" : String(score);
+    return String(score).padStart(2, "0");
   };
 
   return (
@@ -71,6 +71,19 @@ const ScoreControls = ({ score, onIncrement, onDecrement }: ScoreControlsProps) 
   );
 };
 
+interface SetsDisplayProps {
+  sets: number;
+}
+
+const SetsDisplay = ({ sets }: SetsDisplayProps) => {
+  return (
+    <div className="sets-controls">
+      <div className="sets-label">Sets</div>
+      <div className="sets-display">{String(sets).padStart(2, "0")}</div>
+    </div>
+  );
+};
+
 interface GamesDisplayProps {
   games: number;
 }
@@ -91,6 +104,7 @@ interface TeamSectionProps {
   activeAthlete: string | null;
   score: number;
   games: number;
+  sets: number;
   onAthleteClick: (athleteId: string) => void;
   onIncrementScore: () => void;
   onDecrementScore: () => void;
@@ -103,6 +117,7 @@ const TeamSection = ({
   activeAthlete,
   score,
   games,
+  sets,
   onAthleteClick,
   onIncrementScore,
   onDecrementScore,
@@ -121,7 +136,10 @@ const TeamSection = ({
         onIncrement={onIncrementScore}
         onDecrement={onDecrementScore}
       />
-      <GamesDisplay games={games} />
+      <div className="sets-games-container">
+        <SetsDisplay sets={sets} />
+        <GamesDisplay games={games} />
+      </div>
     </div>
   );
 };
@@ -138,6 +156,12 @@ const TournamentAdmin = () => {
   const [team2Score, setTeam2Score] = useState<number>(0);
   const [team1Games, setTeam1Games] = useState<number>(0);
   const [team2Games, setTeam2Games] = useState<number>(0);
+  const [team1Sets, setTeam1Sets] = useState<number>(0);
+  const [team2Sets, setTeam2Sets] = useState<number>(0);
+  const [lastSelectedTeam1, setLastSelectedTeam1] = useState<string | null>(null);
+  const [lastSelectedTeam2, setLastSelectedTeam2] = useState<string | null>(null);
+  const [isTieBreak, setIsTieBreak] = useState<boolean>(false);
+  const [setsWonHistory, setSetsWonHistory] = useState<("team1" | "team2")[]>([]);
 
   useEffect(() => {
     const loadEvent = async () => {
@@ -215,11 +239,59 @@ const TournamentAdmin = () => {
   }
 
   const handleAthleteClick = (athleteId: string) => {
-    if (activeAthlete === athleteId) {
-      // Se clicar no mesmo atleta, desativa
-      setActiveAthlete(null);
+    if (!event) return;
+
+    // Identifica qual time o atleta pertence
+    const isTeam1 = athleteId.includes("Dupla1");
+
+    // Se for singles, apenas ativa/desativa o atleta
+    if (event.isSingles) {
+      if (activeAthlete === athleteId) {
+        setActiveAthlete(null);
+      } else {
+        setActiveAthlete(athleteId);
+      }
+      return;
+    }
+
+    // Verifica se já temos seleções de ambos os times (modo de ciclo ativo)
+    const isCyclingMode = lastSelectedTeam1 !== null && lastSelectedTeam2 !== null;
+
+    if (isCyclingMode) {
+      // Durante o ciclo: atualiza o último selecionado do time e ativa o atleta clicado
+      // Se clicamos no time oposto, o jogador que estava ativo antes deve se tornar o lastSelected do seu time
+      const previousActiveAthlete = activeAthlete;
+      const previousActiveIsTeam1 = previousActiveAthlete?.includes("Dupla1") ?? false;
+      
+      // Se clicamos no time oposto, atualiza o lastSelected do time original
+      if (previousActiveIsTeam1 !== isTeam1 && previousActiveAthlete) {
+        // Estamos clicando no time oposto
+        // O jogador que estava ativo antes (do time original) deve se tornar o lastSelected
+        if (previousActiveIsTeam1) {
+          // O time original era team1, então atualiza lastSelectedTeam1
+          setLastSelectedTeam1(previousActiveAthlete);
+        } else {
+          // O time original era team2, então atualiza lastSelectedTeam2
+          setLastSelectedTeam2(previousActiveAthlete);
+        }
+      }
+      
+      // Atualiza o lastSelected do time clicado
+      if (isTeam1) {
+        setLastSelectedTeam1(athleteId);
+      } else {
+        setLastSelectedTeam2(athleteId);
+      }
+      
+      // Ativa o atleta clicado
+      setActiveAthlete(athleteId);
     } else {
-      // Ativa o atleta clicado (substitui qualquer ativo anterior)
+      // Fase inicial: apenas registra a seleção e ativa o atleta
+      if (isTeam1) {
+        setLastSelectedTeam1(athleteId);
+      } else {
+        setLastSelectedTeam2(athleteId);
+      }
       setActiveAthlete(athleteId);
     }
   };
@@ -227,66 +299,181 @@ const TournamentAdmin = () => {
   const handleChangeAthlete = () => {
     if (!event) return;
 
-    const sequence = event.isSingles
-      ? ["athlete1Dupla1", "athlete1Dupla2"]
-      : [
-          "athlete1Dupla1",
-          "athlete1Dupla2",
-          "athlete2Dupla1",
-          "athlete2Dupla2",
-        ];
+    // Se for singles, usa a sequência simples
+    if (event.isSingles) {
+      const sequence = ["athlete1Dupla1", "athlete1Dupla2"];
+      const currentIndex = activeAthlete ? sequence.indexOf(activeAthlete) : -1;
+      if (currentIndex === -1) {
+        setActiveAthlete(sequence[0]);
+      } else {
+        const nextIndex = (currentIndex + 1) % sequence.length;
+        setActiveAthlete(sequence[nextIndex]);
+      }
+      return;
+    }
 
-    const currentIndex = activeAthlete
-      ? sequence.indexOf(activeAthlete)
-      : -1;
+    // Para duplas: verifica se estamos em modo de ciclo
+    const isCyclingMode = lastSelectedTeam1 !== null && lastSelectedTeam2 !== null;
 
-    if (currentIndex === -1) {
-      // Se não há atleta ativo, começa do primeiro
-      setActiveAthlete(sequence[0]);
+    if (!isCyclingMode) {
+      // Se não estamos em modo de ciclo, usa a sequência padrão
+      const sequence = [
+        "athlete1Dupla1",
+        "athlete1Dupla2",
+        "athlete2Dupla1",
+        "athlete2Dupla2",
+      ];
+      const currentIndex = activeAthlete ? sequence.indexOf(activeAthlete) : -1;
+      if (currentIndex === -1) {
+        setActiveAthlete(sequence[0]);
+      } else {
+        const nextIndex = (currentIndex + 1) % sequence.length;
+        setActiveAthlete(sequence[nextIndex]);
+      }
+      return;
+    }
+
+    // Modo de ciclo: alterna entre os jogadores que NÃO foram os últimos selecionados de cada time
+    const team1Athletes = ["athlete1Dupla1", "athlete2Dupla1"];
+    const team2Athletes = ["athlete1Dupla2", "athlete2Dupla2"];
+
+    // Encontra o outro jogador de cada time (o que não foi o último selecionado)
+    // IMPORTANTE: Sempre retorna o jogador que NÃO é o último selecionado
+    const getOtherPlayer = (athletes: string[], lastSelected: string | null): string => {
+      if (!lastSelected) {
+        // Se não há último selecionado, retorna o primeiro
+        return athletes[0];
+      }
+      // Retorna o jogador que não é o último selecionado
+      const other = athletes.find((id) => id !== lastSelected);
+      // Fallback: se por algum motivo não encontrar (não deveria acontecer), retorna o primeiro
+      return other || athletes[0];
+    };
+
+    const otherTeam1 = getOtherPlayer(team1Athletes, lastSelectedTeam1);
+    const otherTeam2 = getOtherPlayer(team2Athletes, lastSelectedTeam2);
+
+    // Determina qual time está ativo atualmente
+    const isCurrentlyTeam1 = activeAthlete?.includes("Dupla1") ?? false;
+
+    // Alterna para o outro jogador do time oposto
+    // Se estamos no time 1, vai para o outro do time 2, e vice-versa
+    if (isCurrentlyTeam1) {
+      setActiveAthlete(otherTeam2);
     } else {
-      // Move para o próximo na sequência
-      const nextIndex = (currentIndex + 1) % sequence.length;
-      setActiveAthlete(sequence[nextIndex]);
+      setActiveAthlete(otherTeam1);
     }
   };
 
   const scoreSequence = [0, 15, 30, 40];
 
   const handleIncrementScore = (team: "team1" | "team2") => {
-    if (team === "team1") {
-      const currentIndex = scoreSequence.indexOf(team1Score);
-      if (currentIndex < scoreSequence.length - 1) {
-        setTeam1Score(scoreSequence[currentIndex + 1]);
-      } else if (team1Score === 40) {
-        // Quando chegar a 40 e clicar novamente, reseta para 00 e incrementa games
-        setTeam1Score(0);
-        setTeam1Games((games) => games + 1);
-        handleChangeAthlete();
+    if (isTieBreak) {
+      // No tie break, incrementa de 1 em 1
+      if (team === "team1") {
+        setTeam1Score(team1Score + 1);
+      } else {
+        setTeam2Score(team2Score + 1);
       }
     } else {
-      const currentIndex = scoreSequence.indexOf(team2Score);
-      if (currentIndex < scoreSequence.length - 1) {
-        setTeam2Score(scoreSequence[currentIndex + 1]);
-      } else if (team2Score === 40) {
-        // Quando chegar a 40 e clicar novamente, reseta para 00 e incrementa games
-        setTeam2Score(0);
-        setTeam2Games((games) => games + 1);
-        handleChangeAthlete();
+      // Pontuação normal: 0, 15, 30, 40
+      if (team === "team1") {
+        const currentIndex = scoreSequence.indexOf(team1Score);
+        if (currentIndex < scoreSequence.length - 1) {
+          setTeam1Score(scoreSequence[currentIndex + 1]);
+        } else if (team1Score === 40) {
+          // Quando chegar a 40 e clicar novamente, reseta para 00 e incrementa games
+          setTeam1Score(0);
+          const newGames = team1Games + 1;
+          // Se chegou a 7 games, zera games e incrementa sets
+          if (newGames >= 7) {
+            setTeam1Games(0);
+            setTeam1Sets((sets) => sets + 1);
+          } else {
+            setTeam1Games(newGames);
+          }
+          handleChangeAthlete();
+        }
+      } else {
+        const currentIndex = scoreSequence.indexOf(team2Score);
+        if (currentIndex < scoreSequence.length - 1) {
+          setTeam2Score(scoreSequence[currentIndex + 1]);
+        } else if (team2Score === 40) {
+          // Quando chegar a 40 e clicar novamente, reseta para 00 e incrementa games
+          setTeam2Score(0);
+          const newGames = team2Games + 1;
+          // Se chegou a 7 games, zera games e incrementa sets
+          if (newGames >= 7) {
+            setTeam2Games(0);
+            setTeam2Sets((sets) => sets + 1);
+          } else {
+            setTeam2Games(newGames);
+          }
+          handleChangeAthlete();
+        }
       }
     }
   };
 
   const handleDecrementScore = (team: "team1" | "team2") => {
-    if (team === "team1") {
-      const currentIndex = scoreSequence.indexOf(team1Score);
-      if (currentIndex > 0) {
-        setTeam1Score(scoreSequence[currentIndex - 1]);
+    if (isTieBreak) {
+      // No tie break, decrementa de 1 em 1
+      if (team === "team1") {
+        if (team1Score > 0) {
+          setTeam1Score(team1Score - 1);
+        }
+      } else {
+        if (team2Score > 0) {
+          setTeam2Score(team2Score - 1);
+        }
       }
     } else {
-      const currentIndex = scoreSequence.indexOf(team2Score);
-      if (currentIndex > 0) {
-        setTeam2Score(scoreSequence[currentIndex - 1]);
+      // Pontuação normal: 0, 15, 30, 40
+      if (team === "team1") {
+        const currentIndex = scoreSequence.indexOf(team1Score);
+        if (currentIndex > 0) {
+          setTeam1Score(scoreSequence[currentIndex - 1]);
+        }
+      } else {
+        const currentIndex = scoreSequence.indexOf(team2Score);
+        if (currentIndex > 0) {
+          setTeam2Score(scoreSequence[currentIndex - 1]);
+        }
       }
+    }
+  };
+
+  const handleIncrementSet = () => {
+    if (!isTieBreak) return;
+    
+    // Determina qual time tem mais pontos
+    const winningTeam = team1Score > team2Score ? "team1" : "team2";
+    
+    if (winningTeam === "team1") {
+      setTeam1Sets((sets) => sets + 1);
+      setTeam1Score(0); // Reseta os pontos do time vencedor
+    } else {
+      setTeam2Sets((sets) => sets + 1);
+      setTeam2Score(0); // Reseta os pontos do time vencedor
+    }
+    
+    // Salva na lista de histórico
+    setSetsWonHistory((history) => [...history, winningTeam]);
+  };
+
+  const handleDecrementSet = () => {
+    if (!isTieBreak) return;
+    if (setsWonHistory.length === 0) return;
+    
+    // Remove o último set ganho do histórico
+    const lastWonTeam = setsWonHistory[setsWonHistory.length - 1];
+    setSetsWonHistory((history) => history.slice(0, -1));
+    
+    // Remove 1 set do time que ganhou por último
+    if (lastWonTeam === "team1") {
+      setTeam1Sets((sets) => Math.max(0, sets - 1));
+    } else {
+      setTeam2Sets((sets) => Math.max(0, sets - 1));
     }
   };
 
@@ -308,6 +495,7 @@ const TournamentAdmin = () => {
           activeAthlete={activeAthlete}
           score={team1Score}
           games={team1Games}
+          sets={team1Sets}
           onAthleteClick={handleAthleteClick}
           onIncrementScore={() => handleIncrementScore("team1")}
           onDecrementScore={() => handleDecrementScore("team1")}
@@ -324,6 +512,33 @@ const TournamentAdmin = () => {
               Resetar
             </button>
           </div>
+          <div className="sets-control-buttons">
+            <button
+              onClick={handleDecrementSet}
+              className="sets-control-button"
+              disabled={!isTieBreak || setsWonHistory.length === 0}
+              aria-label="Remover set"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <span className="sets-control-label">Sets</span>
+            <button
+              onClick={handleIncrementSet}
+              className="sets-control-button"
+              disabled={!isTieBreak}
+              aria-label="Adicionar set"
+            >
+              <ChevronRight size={20} />
+            </button>
+          </div>
+          <div className="tie-break-control">
+            <button
+              onClick={() => setIsTieBreak(!isTieBreak)}
+              className={`tie-break-button ${isTieBreak ? "active" : ""}`}
+            >
+              Tie Break
+            </button>
+          </div>
         </div>
 
         <TeamSection
@@ -337,6 +552,7 @@ const TournamentAdmin = () => {
           activeAthlete={activeAthlete}
           score={team2Score}
           games={team2Games}
+          sets={team2Sets}
           onAthleteClick={handleAthleteClick}
           onIncrementScore={() => handleIncrementScore("team2")}
           onDecrementScore={() => handleDecrementScore("team2")}
