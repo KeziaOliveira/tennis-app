@@ -1,0 +1,215 @@
+.overlay-container {
+  width: 100vw;
+  height: 100vh;
+  background: rgb(255, 28, 179);
+  color: #000000;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  padding: 0;
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+}
+
+.overlay-loading,
+.overlay-error {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 24px;
+  color: #ffffff;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+/* Timer no topo esquerdo */
+.overlay-timer-box {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffd700;
+  color: #000000; 
+  padding: 6px 12px;
+  border-radius: 6px;
+  z-index: 10;
+}
+
+.overlay-timer-icon {
+  color: #000000;
+  flex-shrink: 0;
+}
+
+.overlay-timer-text {
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-family: "Courier New", monospace;
+  color: #000000;
+}
+
+/* Times empilhados verticalmente */
+.overlay-teams-stacked {
+  position: absolute;
+  top: 50px;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  z-index: 5;
+}
+
+/* Quando timer está desabilitado, times começam do topo */
+.overlay-teams-stacked.no-timer {
+  top: 0;
+}
+
+.overlay-team-section {
+  background: #1e3a8a;
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-width: 500px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.overlay-team-section:last-child {
+  border-bottom: none;
+}
+
+.overlay-team-players {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.overlay-player-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.overlay-player-color-indicator {
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.overlay-player-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.overlay-serving-icon {
+  color: #ffffff;
+  flex-shrink: 0;
+  margin-left: 6px;
+  width: 20px;
+  height: 20px;
+}
+
+.overlay-team-scores {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.overlay-score-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-family: "Courier New", monospace;
+  padding: 6px 8px;
+  border-radius: 4px;
+  min-width: 35px;
+  text-align: center;
+}
+
+.overlay-score-points {
+  background: #ffd700;
+  color: #000000;
+  min-width: 45px;
+}
+
+.overlay-score-games,
+.overlay-score-sets {
+  background: #ffffff;
+  color: #000000;
+  min-width: 35px;
+}
+
+/* Responsividade */
+@media (max-width: 1920px) {
+  .overlay-team-section {
+    min-width: 450px;
+    padding: 10px 14px;
+  }
+
+  .overlay-player-name {
+    font-size: 16px;
+  }
+
+  .overlay-player-color-indicator {
+    width: 16px;
+    height: 16px;
+  }
+
+  .overlay-score-box {
+    font-size: 16px;
+    padding: 5px 7px;
+    min-width: 32px;
+  }
+
+  .overlay-score-points {
+    min-width: 40px;
+  }
+}
+
+@media (max-width: 1280px) {
+  .overlay-team-section {
+    min-width: 400px;
+    padding: 8px 12px;
+  }
+
+  .overlay-player-name {
+    font-size: 14px;
+  }
+
+  .overlay-player-color-indicator {
+    width: 14px;
+    height: 14px;
+  }
+
+  .overlay-score-box {
+    font-size: 14px;
+    padding: 4px 6px;
+    min-width: 30px;
+  }
+
+  .overlay-score-points {
+    min-width: 35px;
+  }
+
+  .overlay-timer-box {
+    padding: 5px 10px;
+  }
+
+  .overlay-timer-text {
+    font-size: 14px;
+  }
+
+  .overlay-timer-icon {
+    width: 16px;
+    height: 16px;
+  }
+}

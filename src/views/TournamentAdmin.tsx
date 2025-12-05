@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router";
-import { Circle, ChevronLeft, ChevronRight } from "lucide-react";
+import { Circle, ChevronLeft, ChevronRight, Copy, Check } from "lucide-react";
 import { getEvent, type EventDocument } from "../services/events/eventService";
 import "./TournamentAdmin.css";
 
@@ -162,6 +162,20 @@ const TournamentAdmin = () => {
   const [lastSelectedTeam2, setLastSelectedTeam2] = useState<string | null>(null);
   const [isTieBreak, setIsTieBreak] = useState<boolean>(false);
   const [setsWonHistory, setSetsWonHistory] = useState<("team1" | "team2")[]>([]);
+  const [linkCopied, setLinkCopied] = useState<boolean>(false);
+  const [isTimerEnabled, setIsTimerEnabled] = useState<boolean>(false);
+
+  // Pausa o timer quando ele é desabilitado ou quando o evento não tem gameTime
+  useEffect(() => {
+    if (event && !event.gameTime) {
+      setIsTimerEnabled(false);
+      if (isRunning) {
+        setIsRunning(false);
+      }
+    } else if (!isTimerEnabled && isRunning) {
+      setIsRunning(false);
+    }
+  }, [event, isTimerEnabled, isRunning]);
 
   useEffect(() => {
     const loadEvent = async () => {
@@ -175,6 +189,8 @@ const TournamentAdmin = () => {
         const eventData = await getEvent(eventId);
         if (eventData) {
           setEvent(eventData);
+          // Define o estado do timer baseado na propriedade gameTime do evento
+          setIsTimerEnabled(eventData.gameTime || false);
         } else {
           setError("Evento não encontrado");
         }
@@ -203,6 +219,26 @@ const TournamentAdmin = () => {
       }
     };
   }, [isRunning]);
+
+  // Sincroniza dados com localStorage para o overlay
+  useEffect(() => {
+    if (!eventId) return;
+
+    const data = {
+      timeElapsed,
+      isRunning,
+      activeAthlete,
+      team1Score,
+      team2Score,
+      team1Games,
+      team2Games,
+      team1Sets,
+      team2Sets,
+      isTimerEnabled,
+    };
+
+    localStorage.setItem(`tournament_${eventId}`, JSON.stringify(data));
+  }, [eventId, timeElapsed, isRunning, activeAthlete, team1Score, team2Score, team1Games, team2Games, team1Sets, team2Sets, isTimerEnabled]);
 
   const formatTime = (seconds: number): string => {
     const hours = Math.floor(seconds / 3600);
@@ -477,6 +513,39 @@ const TournamentAdmin = () => {
     }
   };
 
+  const handleCopyOverlayLink = async () => {
+    if (!eventId) return;
+
+    const overlayUrl = `${window.location.origin}/overlay/${eventId}`;
+    
+    try {
+      await navigator.clipboard.writeText(overlayUrl);
+      setLinkCopied(true);
+      setTimeout(() => {
+        setLinkCopied(false);
+      }, 2000);
+    } catch (err) {
+      console.error("Erro ao copiar link:", err);
+      // Fallback para navegadores mais antigos
+      const textArea = document.createElement("textarea");
+      textArea.value = overlayUrl;
+      textArea.style.position = "fixed";
+      textArea.style.opacity = "0";
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand("copy");
+        setLinkCopied(true);
+        setTimeout(() => {
+          setLinkCopied(false);
+        }, 2000);
+      } catch (fallbackErr) {
+        console.error("Erro ao copiar link (fallback):", fallbackErr);
+      }
+      document.body.removeChild(textArea);
+    }
+  };
+
   return (
     <div className="tournament-admin-container">
       <div className="tournament-header">
@@ -501,17 +570,31 @@ const TournamentAdmin = () => {
           onDecrementScore={() => handleDecrementScore("team1")}
         />
 
-        <div className="timer-section">
-          <div className="timer-label">Tempo de jogo</div>
-          <div className="timer-display">{formatTime(timeElapsed)}</div>
-          <div className="timer-controls">
-            <button onClick={handleStartPause} className="timer-button">
-              {isRunning ? "Pausar" : "Iniciar"}
-            </button>
-            <button onClick={handleReset} className="timer-button">
-              Resetar
-            </button>
-          </div>
+        {event.gameTime && (
+          <div className="timer-section">
+            {isTimerEnabled ? (
+              <>
+                <div className="timer-label">Tempo de jogo</div>
+                <div className="timer-display">{formatTime(timeElapsed)}</div>
+                <div className="timer-controls">
+                  <button onClick={handleStartPause} className="timer-button">
+                    {isRunning ? "Pausar" : "Iniciar"}
+                  </button>
+                  <button onClick={handleReset} className="timer-button">
+                    Resetar
+                  </button>
+                </div>
+              </>
+            ) : event.gameTime ? (
+              <div className="timer-controls">
+                <button
+                  onClick={() => setIsTimerEnabled(true)}
+                  className="timer-button"
+                >
+                  Habilitar Timer
+                </button>
+              </div>
+            ) : null}
           <div className="sets-control-buttons">
             <button
               onClick={handleDecrementSet}
@@ -531,15 +614,66 @@ const TournamentAdmin = () => {
               <ChevronRight size={20} />
             </button>
           </div>
-          <div className="tie-break-control">
-            <button
-              onClick={() => setIsTieBreak(!isTieBreak)}
-              className={`tie-break-button ${isTieBreak ? "active" : ""}`}
-            >
-              Tie Break
-            </button>
+            <div className="tie-break-control">
+              <button
+                onClick={() => setIsTieBreak(!isTieBreak)}
+                className={`tie-break-button ${isTieBreak ? "active" : ""}`}
+              >
+                Tie Break
+              </button>
+            </div>
+            <div className="copy-overlay-link-control">
+              <button
+                onClick={handleCopyOverlayLink}
+                className="copy-overlay-link-button"
+                title="Copiar link da sobreposição"
+              >
+                {linkCopied ? (
+                  <>
+                    <Check size={16} />
+                    <span>Link copiado!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy size={16} />
+                    <span>Copiar link overlay</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
-        </div>
+        )}
+        {!event.gameTime && (
+          <div className="timer-section">
+            <div className="tie-break-control">
+              <button
+                onClick={() => setIsTieBreak(!isTieBreak)}
+                className={`tie-break-button ${isTieBreak ? "active" : ""}`}
+              >
+                Tie Break
+              </button>
+            </div>
+            <div className="copy-overlay-link-control">
+              <button
+                onClick={handleCopyOverlayLink}
+                className="copy-overlay-link-button"
+                title="Copiar link da sobreposição"
+              >
+                {linkCopied ? (
+                  <>
+                    <Check size={16} />
+                    <span>Link copiado!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy size={16} />
+                    <span>Copiar link overlay</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
 
         <TeamSection
           event={event}

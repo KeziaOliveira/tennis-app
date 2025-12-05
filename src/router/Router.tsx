@@ -5,6 +5,7 @@ import Auth from "../views/Auth";
 import App from "../App";
 import EventForm from "../views/EventForm";
 import TournamentAdmin from "../views/TournamentAdmin";
+import TournamentOverlay from "../views/TournamentOverlay";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
@@ -84,6 +85,10 @@ const router = createBrowserRouter([
         <TournamentAdmin />
       </ProtectedRoute>
     ),
+  },
+  {
+    path: "/overlay/:eventId",
+    element: <TournamentOverlay />,
   },
 ]);
 
