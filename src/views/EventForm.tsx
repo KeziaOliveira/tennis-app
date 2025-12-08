@@ -47,13 +47,6 @@ const EventForm = () => {
     }));
   };
 
-  const handleToggleChange = (field: keyof EventFormData) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: !prev[field],
-    }));
-  };
-
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
