@@ -212,18 +212,7 @@ const TournamentOverlay = () => {
                 />
                 <span className="overlay-player-name">{name}</span>
                 {index === 0 && isTeam2Serving() && (
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    className="overlay-serving-icon"
-                  >
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M12 2 L12 22 M2 12 L22 12" strokeWidth="1.5" />
-                  </svg>
+                  <Circle size={16} fill="currentColor" className="overlay-serving-icon" />
                 )}
               </div>
             ))}

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from './contexts/AuthContext'
 import { useNavigate } from 'react-router'
-import { Settings } from 'lucide-react'
-import { getUserEvents, type EventDocument } from './services/events/eventService'
+import { Settings, Trash2 } from 'lucide-react'
+import { getUserEvents, deleteEvent, type EventDocument } from './services/events/eventService'
 import './App.css'
 
 function App() {
@@ -43,6 +43,24 @@ function App() {
 
   const handleEventClick = (eventId: string) => {
     navigate(`/tournament/${eventId}`)
+  }
+
+  const handleDeleteEvent = async (eventId: string, event: React.MouseEvent) => {
+    event.stopPropagation() // Previne que o clique dispare o onClick do card
+    
+    if (!window.confirm('Tem certeza que deseja apagar este torneio?')) {
+      return
+    }
+
+    try {
+      await deleteEvent(eventId)
+      // Remove o evento da lista local
+      setEvents((prevEvents) => prevEvents.filter((e) => e.id !== eventId))
+    } catch (err: any) {
+      setError(err.message || 'Erro ao apagar evento')
+      // Limpa o erro após 3 segundos
+      setTimeout(() => setError(''), 3000)
+    }
   }
 
   const formatEventDate = (timestamp: any): string => {
@@ -109,7 +127,17 @@ function App() {
                 >
                   <div className="event-card-header">
                     <h3 className="event-card-title">{event.tournamentName}</h3>
-                    <span className="event-card-date">{formatEventDate(event.createdAt)}</span>
+                    <div className="event-card-actions">
+                      <span className="event-card-date">{formatEventDate(event.createdAt)}</span>
+                      <button
+                        className="event-delete-button"
+                        onClick={(e) => handleDeleteEvent(event.id, e)}
+                        aria-label="Apagar torneio"
+                        title="Apagar torneio"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
                   </div>
                   <div className="event-card-preview">{getEventPreview(event)}</div>
                 </div>

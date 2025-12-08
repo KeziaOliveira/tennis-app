@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router";
-import { Circle, ChevronLeft, ChevronRight, Copy, Check } from "lucide-react";
+import { Circle, ChevronLeft, ChevronRight, Copy, Check, Clock, Plus, Minus } from "lucide-react";
 import { getEvent, type EventDocument } from "../services/events/eventService";
 import "./TournamentAdmin.css";
 
@@ -9,9 +9,10 @@ interface AthleteListProps {
   athleteIds: string[];
   activeAthlete: string | null;
   onAthleteClick: (athleteId: string) => void;
+  isTeam2?: boolean;
 }
 
-const AthleteList = ({ event, athleteIds, activeAthlete, onAthleteClick }: AthleteListProps) => {
+const AthleteList = ({ event, athleteIds, activeAthlete, onAthleteClick, isTeam2 = false }: AthleteListProps) => {
   const isAthleteActive = (athleteId: string): boolean => {
     return activeAthlete === athleteId;
   };
@@ -23,15 +24,26 @@ const AthleteList = ({ event, athleteIds, activeAthlete, onAthleteClick }: Athle
   return (
     <div className="athletes-list">
       {athleteIds.map((athleteId) => (
-        <div key={athleteId} className="athlete-item">
-          <button
-            className={`tennis-button ${isAthleteActive(athleteId) ? "active" : ""}`}
-            onClick={() => onAthleteClick(athleteId)}
-            aria-label={`Atleta ${athleteId}`}
-          >
-            <Circle size={20} fill={isAthleteActive(athleteId) ? "currentColor" : "none"} />
-          </button>
+        <div key={athleteId} className={`athlete-item ${isTeam2 ? "team2" : ""}`}>
+          {!isTeam2 && (
+            <button
+              className={`tennis-button ${isAthleteActive(athleteId) ? "active" : ""}`}
+              onClick={() => onAthleteClick(athleteId)}
+              aria-label={`Atleta ${athleteId}`}
+            >
+              <Circle size={20} fill={isAthleteActive(athleteId) ? "currentColor" : "none"} />
+            </button>
+          )}
           <span className="athlete-name">{getAthleteName(athleteId)}</span>
+          {isTeam2 && (
+            <button
+              className={`tennis-button ${isAthleteActive(athleteId) ? "active" : ""}`}
+              onClick={() => onAthleteClick(athleteId)}
+              aria-label={`Atleta ${athleteId}`}
+            >
+              <Circle size={20} fill={isAthleteActive(athleteId) ? "currentColor" : "none"} />
+            </button>
+          )}
         </div>
       ))}
     </div>
@@ -42,9 +54,10 @@ interface ScoreControlsProps {
   score: number;
   onIncrement: () => void;
   onDecrement: () => void;
+  teamColor: string;
 }
 
-const ScoreControls = ({ score, onIncrement, onDecrement }: ScoreControlsProps) => {
+const ScoreControls = ({ score, onIncrement, onDecrement, teamColor }: ScoreControlsProps) => {
   const formatScore = (score: number): string => {
     return String(score).padStart(2, "0");
   };
@@ -56,16 +69,18 @@ const ScoreControls = ({ score, onIncrement, onDecrement }: ScoreControlsProps) 
         className="score-button score-button-plus"
         aria-label="Aumentar pontuação"
       >
-        +
+        <Plus size={28} />
       </button>
-      <div className="score-display">{formatScore(score)}</div>
+      <div className="score-display" style={{ color: teamColor }}>
+        {formatScore(score)}
+      </div>
       <button
         onClick={onDecrement}
         className="score-button score-button-minus"
         aria-label="Diminuir pontuação"
         disabled={score === 0}
       >
-        −
+        <Minus size={28} />
       </button>
     </div>
   );
@@ -108,11 +123,13 @@ interface TeamSectionProps {
   onAthleteClick: (athleteId: string) => void;
   onIncrementScore: () => void;
   onDecrementScore: () => void;
+  teamColor: string;
+  teamColors: string[];
+  isTeam2?: boolean;
 }
 
 const TeamSection = ({
   event,
-  teamLabel,
   athleteIds,
   activeAthlete,
   score,
@@ -121,20 +138,23 @@ const TeamSection = ({
   onAthleteClick,
   onIncrementScore,
   onDecrementScore,
+  teamColor,
+  isTeam2 = false,
 }: TeamSectionProps) => {
   return (
     <div className={`team-section ${athleteIds[0].includes("Dupla1") ? "team-left" : "team-right"}`}>
-      <div className="team-label">{teamLabel}</div>
       <AthleteList
         event={event}
         athleteIds={athleteIds}
         activeAthlete={activeAthlete}
         onAthleteClick={onAthleteClick}
+        isTeam2={isTeam2}
       />
       <ScoreControls
         score={score}
         onIncrement={onIncrementScore}
         onDecrement={onDecrementScore}
+        teamColor={teamColor}
       />
       <div className="sets-games-container">
         <SetsDisplay sets={sets} />
@@ -241,21 +261,13 @@ const TournamentAdmin = () => {
   }, [eventId, timeElapsed, isRunning, activeAthlete, team1Score, team2Score, team1Games, team2Games, team1Sets, team2Sets, isTimerEnabled]);
 
   const formatTime = (seconds: number): string => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
+    const minutes = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+    return `${String(minutes).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
   };
 
-  const handleStartPause = () => {
+  const handleTimerClick = () => {
     setIsRunning(!isRunning);
-  };
-
-  const handleReset = () => {
-    if (window.confirm("Tem certeza que deseja resetar o timer?")) {
-      setIsRunning(false);
-      setTimeElapsed(0);
-    }
   };
 
   if (loading) {
@@ -546,12 +558,14 @@ const TournamentAdmin = () => {
     }
   };
 
+  // Cores para os times
+  const team1Colors = ["#4ade80", "#fb923c"]; // Verde e laranja para jogadores
+  const team2Colors = ["#fbbf24", "#f59e0b"]; // Amarelo/bege para jogadores
+  const team1ScoreColor = "#3b82f6"; // Azul brilhante
+  const team2ScoreColor = "#f97316"; // Laranja brilhante
+
   return (
     <div className="tournament-admin-container">
-      <div className="tournament-header">
-        <h1 className="tournament-title">{event.tournamentName}</h1>
-      </div>
-
       <div className="tournament-main">
         <TeamSection
           event={event}
@@ -568,33 +582,32 @@ const TournamentAdmin = () => {
           onAthleteClick={handleAthleteClick}
           onIncrementScore={() => handleIncrementScore("team1")}
           onDecrementScore={() => handleDecrementScore("team1")}
+          teamColor={team1ScoreColor}
+          teamColors={team1Colors}
+          isTeam2={false}
         />
 
-        {event.gameTime && (
-          <div className="timer-section">
-            {isTimerEnabled ? (
-              <>
-                <div className="timer-label">Tempo de jogo</div>
-                <div className="timer-display">{formatTime(timeElapsed)}</div>
-                <div className="timer-controls">
-                  <button onClick={handleStartPause} className="timer-button">
-                    {isRunning ? "Pausar" : "Iniciar"}
-                  </button>
-                  <button onClick={handleReset} className="timer-button">
-                    Resetar
-                  </button>
-                </div>
-              </>
-            ) : event.gameTime ? (
-              <div className="timer-controls">
-                <button
-                  onClick={() => setIsTimerEnabled(true)}
-                  className="timer-button"
+        <div className="center-panel">
+          {event.gameTime && isTimerEnabled && (
+            <div className="timer-section">
+              <div className="timer-header">
+                <div className="timer-label">TEMPO DE JOGO</div>
+                <div 
+                  className={`timer-display-container clickable ${isRunning ? "running" : ""}`}
+                  onClick={handleTimerClick}
+                  style={{ cursor: "pointer" }}
                 >
-                  Habilitar Timer
-                </button>
+                  <Clock size={24} className="timer-icon" />
+                  <div className="timer-display">{formatTime(timeElapsed)}</div>
+                </div>
               </div>
-            ) : null}
+            </div>
+          )}
+
+          <div className="vs-logo">
+            <span className="vs-text">Vs</span>
+          </div>
+
           <div className="sets-control-buttons">
             <button
               onClick={handleDecrementSet}
@@ -602,7 +615,7 @@ const TournamentAdmin = () => {
               disabled={!isTieBreak || setsWonHistory.length === 0}
               aria-label="Remover set"
             >
-              <ChevronLeft size={20} />
+              <ChevronLeft size={24} />
             </button>
             <span className="sets-control-label">Sets</span>
             <button
@@ -611,69 +624,44 @@ const TournamentAdmin = () => {
               disabled={!isTieBreak}
               aria-label="Adicionar set"
             >
-              <ChevronRight size={20} />
+              <ChevronRight size={24} />
             </button>
           </div>
-            <div className="tie-break-control">
-              <button
-                onClick={() => setIsTieBreak(!isTieBreak)}
-                className={`tie-break-button ${isTieBreak ? "active" : ""}`}
-              >
-                Tie Break
-              </button>
-            </div>
-            <div className="copy-overlay-link-control">
-              <button
-                onClick={handleCopyOverlayLink}
-                className="copy-overlay-link-button"
-                title="Copiar link da sobreposição"
-              >
-                {linkCopied ? (
-                  <>
-                    <Check size={16} />
-                    <span>Link copiado!</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy size={16} />
-                    <span>Copiar link overlay</span>
-                  </>
-                )}
-              </button>
-            </div>
+
+          <div className="tie-break-control">
+            <span className="tie-break-label">Tie break</span>
+            <label className="switch" htmlFor="tie-break-checkbox">
+              <input
+                type="checkbox"
+                id="tie-break-checkbox"
+                checked={isTieBreak}
+                onChange={(e) => setIsTieBreak(e.target.checked)}
+              />
+              <div className="slider round"></div>
+            </label>
           </div>
-        )}
-        {!event.gameTime && (
-          <div className="timer-section">
-            <div className="tie-break-control">
-              <button
-                onClick={() => setIsTieBreak(!isTieBreak)}
-                className={`tie-break-button ${isTieBreak ? "active" : ""}`}
-              >
-                Tie Break
-              </button>
-            </div>
-            <div className="copy-overlay-link-control">
-              <button
-                onClick={handleCopyOverlayLink}
-                className="copy-overlay-link-button"
-                title="Copiar link da sobreposição"
-              >
-                {linkCopied ? (
-                  <>
-                    <Check size={16} />
-                    <span>Link copiado!</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy size={16} />
-                    <span>Copiar link overlay</span>
-                  </>
-                )}
-              </button>
-            </div>
+
+          <div className="copy-overlay-link-control">
+            <div className="my-score-label">MY SCORE BT</div>
+            <button
+              onClick={handleCopyOverlayLink}
+              className="copy-overlay-link-button"
+              title="Copiar link da sobreposição"
+            >
+              {linkCopied ? (
+                <>
+                  <Check size={20} />
+                  <span>Link copiado!</span>
+                </>
+              ) : (
+                <>
+                  <Copy size={20} />
+                  <span>copy link</span>
+                </>
+              )}
+            </button>
           </div>
-        )}
+        </div>
 
         <TeamSection
           event={event}
@@ -690,6 +678,9 @@ const TournamentAdmin = () => {
           onAthleteClick={handleAthleteClick}
           onIncrementScore={() => handleIncrementScore("team2")}
           onDecrementScore={() => handleDecrementScore("team2")}
+          teamColor={team2ScoreColor}
+          teamColors={team2Colors}
+          isTeam2={true}
         />
       </div>
     </div>

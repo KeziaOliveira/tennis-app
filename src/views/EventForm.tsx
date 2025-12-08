@@ -34,7 +34,7 @@ const EventForm = () => {
     athlete2Dupla2: "",
     country2Dupla2: "",
     gamesWithAdvantage: false,
-    gameTime: false,
+    gameTime: true,
     gameStatistics: false,
     isSingles: false,
   });
@@ -75,11 +75,11 @@ const EventForm = () => {
   return (
     <div className="event-form-container">
       <div className="event-form-card">
-        <h1 className="event-form-title">Novo Evento</h1>
+        <h1 className="event-form-title">CRIAR TORNEIO</h1>
 
         <form onSubmit={handleSubmit} className="event-form">
           <div className="form-section">
-            <div className="form-input-group">
+            <div className="form-input-group horizontal">
               <label htmlFor="tournamentName">Nome do torneio</label>
               <input
                 id="tournamentName"
@@ -93,286 +93,226 @@ const EventForm = () => {
             </div>
           </div>
 
-          <div className="form-divider">
-            <span>Atletas</span>
-          </div>
+          <div className="form-section-title">Atletas</div>
 
           <div className="form-section">
             {formData.isSingles ? (
               <>
-                <div className="athlete-pair">
-                  <div className="athlete-pair-header">
-                    <span>Atleta 1</span>
-                  </div>
-                  <div className="athlete-inputs">
-                    <div className="athlete-card">
-                      <div className="athlete-card-inputs">
-                        <div className="form-input-group">
-                          <label htmlFor="athlete1Dupla1">Nome</label>
-                          <input
-                            id="athlete1Dupla1"
-                            name="athlete1Dupla1"
-                            type="text"
-                            value={formData.athlete1Dupla1}
-                            onChange={handleInputChange}
-                            required
-                            placeholder="Nome do atleta"
-                          />
-                        </div>
-                        <div className="form-input-group">
-                          <label htmlFor="country1Dupla1">País</label>
-                          <input
-                            id="country1Dupla1"
-                            name="country1Dupla1"
-                            type="text"
-                            value={formData.country1Dupla1}
-                            onChange={handleInputChange}
-                            required
-                            placeholder="País"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                <div className="athlete-row">
+                  <label className="athlete-label">Atleta 1 - Dupla 1</label>
+                  <input
+                    id="athlete1Dupla1"
+                    name="athlete1Dupla1"
+                    type="text"
+                    value={formData.athlete1Dupla1}
+                    onChange={handleInputChange}
+                    required
+                    placeholder="Nome do atleta"
+                  />
+                  <input
+                    id="country1Dupla1"
+                    name="country1Dupla1"
+                    type="text"
+                    value={formData.country1Dupla1}
+                    onChange={handleInputChange}
+                    required
+                    placeholder="País"
+                    className="country-input"
+                  />
                 </div>
-
-                <div className="vs-divider">VS</div>
-
-                <div className="athlete-pair">
-                  <div className="athlete-pair-header">
-                    <span>Atleta 2</span>
-                  </div>
-                  <div className="athlete-inputs">
-                    <div className="athlete-card">
-                      <div className="athlete-card-inputs">
-                        <div className="form-input-group">
-                          <label htmlFor="athlete1Dupla2">Nome</label>
-                          <input
-                            id="athlete1Dupla2"
-                            name="athlete1Dupla2"
-                            type="text"
-                            value={formData.athlete1Dupla2}
-                            onChange={handleInputChange}
-                            required
-                            placeholder="Nome do atleta"
-                          />
-                        </div>
-                        <div className="form-input-group">
-                          <label htmlFor="country1Dupla2">País</label>
-                          <input
-                            id="country1Dupla2"
-                            name="country1Dupla2"
-                            type="text"
-                            value={formData.country1Dupla2}
-                            onChange={handleInputChange}
-                            required
-                            placeholder="País"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                <div className="vs-divider">-VS-</div>
+                <div className="athlete-row">
+                  <label className="athlete-label">Atleta 1 - Dupla 2</label>
+                  <input
+                    id="athlete1Dupla2"
+                    name="athlete1Dupla2"
+                    type="text"
+                    value={formData.athlete1Dupla2}
+                    onChange={handleInputChange}
+                    required
+                    placeholder="Nome do atleta"
+                  />
+                  <input
+                    id="country1Dupla2"
+                    name="country1Dupla2"
+                    type="text"
+                    value={formData.country1Dupla2}
+                    onChange={handleInputChange}
+                    required
+                    placeholder="País"
+                    className="country-input"
+                  />
                 </div>
               </>
             ) : (
               <>
-                <div className="athlete-pair">
-                  <div className="athlete-pair-header">
-                    <span>Dupla 1</span>
-                  </div>
-                  <div className="athlete-inputs">
-                    <div className="athlete-card">
-                      <div className="athlete-card-label">Atleta 1</div>
-                      <div className="athlete-card-inputs">
-                        <div className="form-input-group">
-                          <label htmlFor="athlete1Dupla1">Nome</label>
-                          <input
-                            id="athlete1Dupla1"
-                            name="athlete1Dupla1"
-                            type="text"
-                            value={formData.athlete1Dupla1}
-                            onChange={handleInputChange}
-                            required
-                            placeholder="Nome do atleta"
-                          />
-                        </div>
-                        <div className="form-input-group">
-                          <label htmlFor="country1Dupla1">País</label>
-                          <input
-                            id="country1Dupla1"
-                            name="country1Dupla1"
-                            type="text"
-                            value={formData.country1Dupla1}
-                            onChange={handleInputChange}
-                            required
-                            placeholder="País"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="athlete-card">
-                      <div className="athlete-card-label">Atleta 2</div>
-                      <div className="athlete-card-inputs">
-                        <div className="form-input-group">
-                          <label htmlFor="athlete2Dupla1">Nome</label>
-                          <input
-                            id="athlete2Dupla1"
-                            name="athlete2Dupla1"
-                            type="text"
-                            value={formData.athlete2Dupla1}
-                            onChange={handleInputChange}
-                            required
-                            placeholder="Nome do atleta"
-                          />
-                        </div>
-                        <div className="form-input-group">
-                          <label htmlFor="country2Dupla1">País</label>
-                          <input
-                            id="country2Dupla1"
-                            name="country2Dupla1"
-                            type="text"
-                            value={formData.country2Dupla1}
-                            onChange={handleInputChange}
-                            required
-                            placeholder="País"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                <div className="athlete-row">
+                  <label className="athlete-label">Atleta 1 - Dupla 1</label>
+                  <input
+                    id="athlete1Dupla1"
+                    name="athlete1Dupla1"
+                    type="text"
+                    value={formData.athlete1Dupla1}
+                    onChange={handleInputChange}
+                    required
+                    placeholder="Nome do atleta"
+                  />
+                  <input
+                    id="country1Dupla1"
+                    name="country1Dupla1"
+                    type="text"
+                    value={formData.country1Dupla1}
+                    onChange={handleInputChange}
+                    required
+                    placeholder="País"
+                    className="country-input"
+                  />
                 </div>
-
-                <div className="vs-divider">VS</div>
-
-                <div className="athlete-pair">
-                  <div className="athlete-pair-header">
-                    <span>Dupla 2</span>
-                  </div>
-                  <div className="athlete-inputs">
-                    <div className="athlete-card">
-                      <div className="athlete-card-label">Atleta 1</div>
-                      <div className="athlete-card-inputs">
-                        <div className="form-input-group">
-                          <label htmlFor="athlete1Dupla2">Nome</label>
-                          <input
-                            id="athlete1Dupla2"
-                            name="athlete1Dupla2"
-                            type="text"
-                            value={formData.athlete1Dupla2}
-                            onChange={handleInputChange}
-                            required
-                            placeholder="Nome do atleta"
-                          />
-                        </div>
-                        <div className="form-input-group">
-                          <label htmlFor="country1Dupla2">País</label>
-                          <input
-                            id="country1Dupla2"
-                            name="country1Dupla2"
-                            type="text"
-                            value={formData.country1Dupla2}
-                            onChange={handleInputChange}
-                            required
-                            placeholder="País"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="athlete-card">
-                      <div className="athlete-card-label">Atleta 2</div>
-                      <div className="athlete-card-inputs">
-                        <div className="form-input-group">
-                          <label htmlFor="athlete2Dupla2">Nome</label>
-                          <input
-                            id="athlete2Dupla2"
-                            name="athlete2Dupla2"
-                            type="text"
-                            value={formData.athlete2Dupla2}
-                            onChange={handleInputChange}
-                            required
-                            placeholder="Nome do atleta"
-                          />
-                        </div>
-                        <div className="form-input-group">
-                          <label htmlFor="country2Dupla2">País</label>
-                          <input
-                            id="country2Dupla2"
-                            name="country2Dupla2"
-                            type="text"
-                            value={formData.country2Dupla2}
-                            onChange={handleInputChange}
-                            required
-                            placeholder="País"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                <div className="athlete-row">
+                  <label className="athlete-label">Atleta 2 - Dupla 1</label>
+                  <input
+                    id="athlete2Dupla1"
+                    name="athlete2Dupla1"
+                    type="text"
+                    value={formData.athlete2Dupla1}
+                    onChange={handleInputChange}
+                    required
+                    placeholder="Nome do atleta"
+                  />
+                  <input
+                    id="country2Dupla1"
+                    name="country2Dupla1"
+                    type="text"
+                    value={formData.country2Dupla1}
+                    onChange={handleInputChange}
+                    required
+                    placeholder="País"
+                    className="country-input"
+                  />
+                </div>
+                <div className="vs-divider">-VS-</div>
+                <div className="athlete-row">
+                  <label className="athlete-label">Atleta 1 - Dupla 2</label>
+                  <input
+                    id="athlete1Dupla2"
+                    name="athlete1Dupla2"
+                    type="text"
+                    value={formData.athlete1Dupla2}
+                    onChange={handleInputChange}
+                    required
+                    placeholder="Nome do atleta"
+                  />
+                  <input
+                    id="country1Dupla2"
+                    name="country1Dupla2"
+                    type="text"
+                    value={formData.country1Dupla2}
+                    onChange={handleInputChange}
+                    required
+                    placeholder="País"
+                    className="country-input"
+                  />
+                </div>
+                <div className="athlete-row">
+                  <label className="athlete-label">Atleta 2 - Dupla 2</label>
+                  <input
+                    id="athlete2Dupla2"
+                    name="athlete2Dupla2"
+                    type="text"
+                    value={formData.athlete2Dupla2}
+                    onChange={handleInputChange}
+                    required
+                    placeholder="Nome do atleta"
+                  />
+                  <input
+                    id="country2Dupla2"
+                    name="country2Dupla2"
+                    type="text"
+                    value={formData.country2Dupla2}
+                    onChange={handleInputChange}
+                    required
+                    placeholder="País"
+                    className="country-input"
+                  />
                 </div>
               </>
             )}
           </div>
 
-          <div className="form-divider">
-            <span>Formato de Disputa</span>
-          </div>
+          <div className="form-section-title">FORMATO DE DISPUTA</div>
 
           <div className="form-section">
             <div className="toggle-group">
               <div className="toggle-item">
                 <label htmlFor="gamesWithAdvantage" className="toggle-label">
-                  GAMES com vantagem
+                  GAMES com vantagem:
                 </label>
-                <button
-                  type="button"
-                  className={`toggle-button ${formData.gamesWithAdvantage ? "active" : ""}`}
-                  onClick={() => handleToggleChange("gamesWithAdvantage")}
-                  aria-pressed={formData.gamesWithAdvantage}
-                >
-                  <span className="toggle-slider"></span>
-                </button>
+                <div className="toggle-control">
+                  <label className="switch" htmlFor="gamesWithAdvantage">
+                    <input
+                      type="checkbox"
+                      id="gamesWithAdvantage"
+                      checked={formData.gamesWithAdvantage}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, gamesWithAdvantage: e.target.checked }))}
+                    />
+                    <div className="slider round"></div>
+                  </label>
+                  <span className={`toggle-status ${formData.gamesWithAdvantage ? "on" : "off"}`}>{formData.gamesWithAdvantage ? "AD" : "NO AD"}</span>
+                </div>
               </div>
 
               <div className="toggle-item">
                 <label htmlFor="gameTime" className="toggle-label">
-                  Tempo de jogo
+                  Tempo de jogo:
                 </label>
-                <button
-                  type="button"
-                  className={`toggle-button ${formData.gameTime ? "active" : ""}`}
-                  onClick={() => handleToggleChange("gameTime")}
-                  aria-pressed={formData.gameTime}
-                >
-                  <span className="toggle-slider"></span>
-                </button>
+                <div className="toggle-control">
+                  <label className="switch" htmlFor="gameTime">
+                    <input
+                      type="checkbox"
+                      id="gameTime"
+                      checked={formData.gameTime}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, gameTime: e.target.checked }))}
+                    />
+                    <div className="slider round"></div>
+                  </label>
+                  <span className={`toggle-status ${formData.gameTime ? "on" : "off"}`}>{formData.gameTime ? "ON" : "OFF"}</span>
+                </div>
               </div>
 
               <div className="toggle-item">
                 <label htmlFor="gameStatistics" className="toggle-label">
-                  Estatística do jogo
+                  Estatística do jogo:
                 </label>
-                <button
-                  type="button"
-                  className={`toggle-button ${formData.gameStatistics ? "active" : ""}`}
-                  onClick={() => handleToggleChange("gameStatistics")}
-                  aria-pressed={formData.gameStatistics}
-                >
-                  <span className="toggle-slider"></span>
-                </button>
+                <div className="toggle-control">
+                  <label className="switch" htmlFor="gameStatistics">
+                    <input
+                      type="checkbox"
+                      id="gameStatistics"
+                      checked={formData.gameStatistics}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, gameStatistics: e.target.checked }))}
+                    />
+                    <div className="slider round"></div>
+                  </label>
+                  <span className={`toggle-status ${formData.gameStatistics ? "on" : "off"}`}>{formData.gameStatistics ? "ON" : "OFF"}</span>
+                </div>
               </div>
 
               <div className="toggle-item">
                 <label htmlFor="isSingles" className="toggle-label">
-                  Jogo de SIMPLES
+                  Jogo de SIMPLES:
                 </label>
-                <button
-                  type="button"
-                  className={`toggle-button ${formData.isSingles ? "active" : ""}`}
-                  onClick={() => handleToggleChange("isSingles")}
-                  aria-pressed={formData.isSingles}
-                >
-                  <span className="toggle-slider"></span>
-                </button>
+                <div className="toggle-control">
+                  <label className="switch" htmlFor="isSingles">
+                    <input
+                      type="checkbox"
+                      id="isSingles"
+                      checked={formData.isSingles}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, isSingles: e.target.checked }))}
+                    />
+                    <div className="slider round"></div>
+                  </label>
+                  <span className={`toggle-status ${formData.isSingles ? "on" : "off"}`}>{formData.isSingles ? "ON" : "OFF"}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -384,7 +324,7 @@ const EventForm = () => {
               Cancelar
             </button>
             <button type="submit" className="submit-button" disabled={loading}>
-              {loading ? "Criando..." : "Criar Evento"}
+              {loading ? "Criando..." : "CRIAR TORNEIO"}
             </button>
           </div>
         </form>

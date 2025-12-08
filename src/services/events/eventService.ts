@@ -1,4 +1,4 @@
-import { collection, addDoc, doc, getDoc, query, where, getDocs, Timestamp } from "firebase/firestore";
+import { collection, addDoc, doc, getDoc, query, where, getDocs, deleteDoc, Timestamp } from "firebase/firestore";
 import { db } from "../../config/firebase";
 import { getCurrentUser } from "../auth/firebaseAuth";
 
@@ -103,5 +103,28 @@ export const getUserEvents = async (): Promise<EventDocument[]> => {
     return events;
   } catch (error: any) {
     throw new Error(`Erro ao buscar eventos: ${error.message}`);
+  }
+};
+
+export const deleteEvent = async (eventId: string): Promise<void> => {
+  try {
+    const user = getCurrentUser();
+    if (!user) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    // Verifica se o evento pertence ao usuário antes de deletar
+    const event = await getEvent(eventId);
+    if (!event) {
+      throw new Error("Evento não encontrado");
+    }
+
+    if (event.createdBy !== user.uid) {
+      throw new Error("Você não tem permissão para deletar este evento");
+    }
+
+    await deleteDoc(doc(db, "events", eventId));
+  } catch (error: any) {
+    throw new Error(`Erro ao deletar evento: ${error.message}`);
   }
 };
