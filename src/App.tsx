@@ -1,162 +1,69 @@
-import { useState, useEffect } from 'react'
-import { useAuth } from './contexts/AuthContext'
-import { useNavigate } from 'react-router'
-import { Settings, Trash2 } from 'lucide-react'
-import { getUserEvents, deleteEvent, type EventDocument } from './services/events/eventService'
-import './App.css'
+import { Routes, Route, Navigate } from 'react-router'
+import Login from './pages/Login'
+import Dashboard from './pages/Dashboard'
+import MatchSetup from './pages/MatchSetup'
+import MatchStats from './pages/MatchStats'
+import Scoreboard from './features/match/components/Scoreboard'
+import Overlay from './pages/Overlay'
+import { useEffect, useState } from 'react'
+import { supabase } from './services/supabase/client'
+import type { Session } from '@supabase/supabase-js'
+import { Toaster } from 'sonner'
 
 function App() {
-  const { user } = useAuth()
-  const navigate = useNavigate()
-  const [events, setEvents] = useState<EventDocument[]>([])
+  const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
 
   useEffect(() => {
-    const loadEvents = async () => {
-      if (!user) {
-        setLoading(false)
-        return
-      }
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
+      setLoading(false)
+    })
 
-      try {
-        const userEvents = await getUserEvents()
-        setEvents(userEvents)
-      } catch (err: any) {
-        setError(err.message || 'Erro ao carregar eventos')
-      } finally {
-        setLoading(false)
-      }
-    }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session)
+    })
 
-    loadEvents()
-  }, [user])
+    return () => subscription.unsubscribe()
+  }, [])
 
-  const handleSettings = () => {
-    // TODO: Implementar navegação para configurações
-    console.log('Abrir configurações')
-  }
-
-  const handleNewEvent = () => {
-    navigate('/new-event')
-  }
-
-  const handleEventClick = (eventId: string) => {
-    navigate(`/tournament/${eventId}`)
-  }
-
-  const handleDeleteEvent = async (eventId: string, event: React.MouseEvent) => {
-    event.stopPropagation() // Previne que o clique dispare o onClick do card
-    
-    if (!window.confirm('Tem certeza que deseja apagar este torneio?')) {
-      return
-    }
-
-    try {
-      await deleteEvent(eventId)
-      // Remove o evento da lista local
-      setEvents((prevEvents) => prevEvents.filter((e) => e.id !== eventId))
-    } catch (err: any) {
-      setError(err.message || 'Erro ao apagar evento')
-      // Limpa o erro após 3 segundos
-      setTimeout(() => setError(''), 3000)
-    }
-  }
-
-  const formatEventDate = (timestamp: any): string => {
-    if (!timestamp) return ''
-    
-    let date: Date
-    if (timestamp.toDate) {
-      date = timestamp.toDate()
-    } else if (timestamp instanceof Date) {
-      date = timestamp
-    } else {
-      return ''
-    }
-
-    return new Intl.DateTimeFormat('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(date)
-  }
-
-  const getEventPreview = (event: EventDocument): string => {
-    if (event.isSingles) {
-      return `${event.athlete1Dupla1} vs ${event.athlete1Dupla2}`
-    }
-    return `${event.athlete1Dupla1} / ${event.athlete2Dupla1} vs ${event.athlete1Dupla2} / ${event.athlete2Dupla2}`
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background text-text">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-primary"></div>
+      </div>
+    )
   }
 
   return (
-    <div className="app-container">
-      <div className="app-header">
-        <div className="user-info">
-          <p>Olá, <strong>{user?.displayName || user?.email}</strong></p>
-        </div>
-        <button 
-          onClick={handleSettings}
-          className="settings-button"
-          aria-label="Configurações"
-        >
-          <Settings size={20} />
-        </button>
-      </div>
-      
-      <div className="app-main">
-        <div className="logo-container">
-          {/* Logo da marca será inserida aqui */}
-        </div>
-
-        {loading ? (
-          <div className="events-loading">Carregando eventos...</div>
-        ) : error ? (
-          <div className="events-error">{error}</div>
-        ) : events.length > 0 ? (
-          <div className="events-section">
-            <h2 className="events-title">Eventos em Andamento</h2>
-            <div className="events-list">
-              {events.map((event) => (
-                <div
-                  key={event.id}
-                  className="event-card"
-                  onClick={() => handleEventClick(event.id)}
-                >
-                  <div className="event-card-header">
-                    <h3 className="event-card-title">{event.tournamentName}</h3>
-                    <div className="event-card-actions">
-                      <span className="event-card-date">{formatEventDate(event.createdAt)}</span>
-                      <button
-                        className="event-delete-button"
-                        onClick={(e) => handleDeleteEvent(event.id, e)}
-                        aria-label="Apagar torneio"
-                        title="Apagar torneio"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="event-card-preview">{getEventPreview(event)}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div className="events-empty">
-            <p>Nenhum evento em andamento</p>
-          </div>
-        )}
-        
-        <button 
-          onClick={handleNewEvent}
-          className="new-event-button"
-        >
-          NOVO EVENTO
-        </button>
-      </div>
+    <div className="min-h-screen bg-background text-text transition-colors duration-300">
+      <Toaster position="top-center" richColors />
+      <Routes>
+        <Route 
+          path="/login" 
+          element={!session ? <Login /> : <Navigate to="/" />} 
+        />
+        <Route 
+          path="/" 
+          element={session ? <Dashboard /> : <Navigate to="/login" />} 
+        />
+        <Route 
+          path="/match/setup" 
+          element={session ? <MatchSetup /> : <Navigate to="/login" />} 
+        />
+        <Route 
+          path="/match/:matchId" 
+          element={session ? <Scoreboard /> : <Navigate to="/login" />} 
+        />
+        <Route 
+          path="/match/:matchId/stats" 
+          element={session ? <MatchStats /> : <Navigate to="/login" />} 
+        />
+        <Route 
+          path="/overlay/:matchId" 
+          element={<Overlay />} 
+        />
+      </Routes>
     </div>
   )
 }
