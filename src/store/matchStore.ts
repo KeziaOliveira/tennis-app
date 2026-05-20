@@ -100,7 +100,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
 
   addPoint: async (team) => {
     const state = get()
-    if (!state.matchId) return
+    if (!state.matchId || state.status === 'finished') return
 
     let newScore = JSON.parse(JSON.stringify(state.score))
     
@@ -139,14 +139,81 @@ export const useMatchStore = create<MatchState>((set, get) => ({
 
     await supabase.from('points').insert({
       match_id: state.matchId,
-      winner: null,
+      winner: team,
       type: 'point'
     })
   },
 
   undoLastPoint: async () => {
-    // Basic undo (WIP)
-    console.log('Undo not fully implemented yet')
+    const state = get()
+    if (!state.matchId || state.status === 'finished') return
+
+    // 1. Find and delete the last point
+    const { data: lastPoints } = await supabase
+      .from('points')
+      .select('id')
+      .eq('match_id', state.matchId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+
+    if (lastPoints && lastPoints.length > 0) {
+      await supabase.from('points').delete().eq('id', lastPoints[0].id)
+    }
+
+    // 2. Fetch all remaining points
+    const { data: allPoints } = await supabase
+      .from('points')
+      .select('winner')
+      .eq('match_id', state.matchId)
+      .order('created_at', { ascending: true })
+
+    // 3. Reconstruct score
+    let reconstructedScore: MatchScore = {
+      sets: [],
+      games: { a: 0, b: 0 },
+      points: { a: 0, b: 0 }
+    }
+
+    if (allPoints) {
+      allPoints.forEach((p: any) => {
+        if (!p.winner) return
+        const t = p.winner as 'a' | 'b'
+        
+        const pt = reconstructedScore.points[t]
+        if (pt === 0) reconstructedScore.points[t] = 15
+        else if (pt === 15) reconstructedScore.points[t] = 30
+        else if (pt === 30) reconstructedScore.points[t] = 40
+        else {
+          reconstructedScore.points = { a: 0, b: 0 }
+          reconstructedScore.games[t] += 1
+          if (reconstructedScore.games[t] >= (state.settings?.maxGames || 6)) {
+            reconstructedScore.sets.push({ a: reconstructedScore.games.a, b: reconstructedScore.games.b })
+            reconstructedScore.games = { a: 0, b: 0 }
+          }
+        }
+      })
+    }
+
+    set({ score: reconstructedScore })
+    await supabase.from('matches').update({ score: reconstructedScore }).eq('id', state.matchId)
+  },
+
+  finishMatch: async () => {
+    const state = get()
+    if (!state.matchId) return
+
+    const update = {
+      status: 'finished',
+      is_running: false,
+      paused_at: new Date().toISOString()
+    }
+
+    set((s) => ({
+      status: 'finished',
+      timer: { ...s.timer, isRunning: false }
+    }))
+
+    await supabase.from('matches').update(update).eq('id', state.matchId)
   },
 
   toggleTimer: async () => {

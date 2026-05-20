@@ -69,8 +69,12 @@ export default function MatchSetup() {
           tournament_id: tournamentId,
           status: 'live',
           settings: {
+            ...settings,
             type,
-            ...settings
+            players: {
+              teamA: [teamA.p1, teamA.p2].filter(Boolean),
+              teamB: [teamB.p1, teamB.p2].filter(Boolean)
+            }
           },
           score: {
             sets: [],
