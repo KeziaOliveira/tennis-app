@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router'
 import { supabase } from '../../../services/supabase/client'
 import { useMatchStore } from '../../../store/matchStore'
-import { ChevronLeft, Share2, Timer, Settings, Activity, Pause, Play } from 'lucide-react'
+import { ChevronLeft, Share2, Timer, Settings, Activity } from 'lucide-react'
 import { useTheme } from '../../../theme/theme-provider'
 import { toast } from 'sonner'
 import StatsModal from './StatsModal'
@@ -128,10 +128,12 @@ const Scoreboard = () => {
           <ChevronLeft className="w-6 h-6" />
         </button>
         <div className="flex flex-col items-center">
-          <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-1 opacity-50">Arena Central</span>
+          <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-1 opacity-50">
+            {settings?.tournamentName || 'Arena Central'}
+          </span>
           <div 
             onClick={() => status !== 'finished' && toggleTimer()}
-            className={`flex items-center gap-3 px-5 py-2 rounded-2xl cursor-pointer transition-all border shadow-lg ${timer.isRunning ? 'bg-primary/10 border-primary/50 text-white shadow-primary/10' : 'bg-surface border-white/5 text-text-muted hover:bg-surface/50'}`}
+            className={`flex items-center gap-3 px-5 py-2 rounded-2xl cursor-pointer transition-all border shadow-lg ${timer.isRunning ? 'bg-primary/10 border-primary/50 text-primary shadow-primary/10' : 'bg-surface border-white/5 text-text-muted hover:bg-surface/50'}`}
           >
             <Timer className={`w-4 h-4 ${timer.isRunning ? 'animate-pulse text-primary' : ''}`} />
             <span className="text-xl font-black font-mono leading-none tracking-tighter">

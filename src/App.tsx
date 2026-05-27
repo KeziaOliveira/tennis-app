@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router'
 import Login from './pages/Login'
+import ResetPassword from './pages/ResetPassword'
 import Dashboard from './pages/Dashboard'
 import MatchSetup from './pages/MatchSetup'
 import MatchStats from './pages/MatchStats'
@@ -42,6 +43,10 @@ function App() {
         <Route 
           path="/login" 
           element={!session ? <Login /> : <Navigate to="/" />} 
+        />
+        <Route 
+          path="/reset-password" 
+          element={<ResetPassword />} 
         />
         <Route 
           path="/" 

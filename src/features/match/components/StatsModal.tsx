@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../../../services/supabase/client'
-import { X, User, Zap, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { X, Zap, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface StatsModalProps {
@@ -23,7 +23,6 @@ import { Activity } from 'lucide-react'
 export default function StatsModal({ matchId, isOpen, onClose }: StatsModalProps) {
   const [loading, setLoading] = useState(false)
   const [selectedStroke, setSelectedStroke] = useState('')
-  const [executor, setExecutor] = useState('')
 
   if (!isOpen) return null
 

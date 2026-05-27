@@ -4,6 +4,7 @@ import {
   signOut,
   onAuthStateChanged,
   updateProfile,
+  sendPasswordResetEmail,
 } from "firebase/auth";
 import { auth } from "../../config/firebase";
 
@@ -66,6 +67,18 @@ export const loginUser = async (
 export const logoutUser = async (): Promise<void> => {
   try {
     await signOut(auth);
+  } catch (error: any) {
+    const authError: AuthError = {
+      code: error.code,
+      message: getErrorMessage(error.code),
+    };
+    throw authError;
+  }
+};
+
+export const resetPassword = async (email: string): Promise<void> => {
+  try {
+    await sendPasswordResetEmail(auth, email);
   } catch (error: any) {
     const authError: AuthError = {
       code: error.code,

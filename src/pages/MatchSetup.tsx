@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router'
 import { supabase } from '../services/supabase/client'
-import { Users, User, Settings, Play, ChevronLeft, Flag } from 'lucide-react'
+import { Users, Settings, Play, ChevronLeft, Flag } from 'lucide-react'
 import { toast } from 'sonner'
 
 export default function MatchSetup() {
@@ -10,6 +10,7 @@ export default function MatchSetup() {
   const [allPlayers, setAllPlayers] = useState<any[]>([])
 
   // State for form
+  const [tournamentName, setTournamentName] = useState('')
   const [type, setType] = useState<'singles' | 'doubles'>('doubles')
   const [teamA, setTeamA] = useState({ p1: '', p2: '' })
   const [teamB, setTeamB] = useState({ p1: '', p2: '' })
@@ -38,7 +39,7 @@ export default function MatchSetup() {
     if (existing) return existing.id
 
     // Create new
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('players')
       .insert({ name: name.trim() })
       .select()
@@ -52,10 +53,10 @@ export default function MatchSetup() {
     setLoading(true)
     try {
       // 1. Get/Create Players
-      const p1a = await getOrCreatePlayer(teamA.p1)
-      const p2a = type === 'doubles' ? await getOrCreatePlayer(teamA.p2) : null
-      const p1b = await getOrCreatePlayer(teamB.p1)
-      const p2b = type === 'doubles' ? await getOrCreatePlayer(teamB.p2) : null
+      await getOrCreatePlayer(teamA.p1)
+      if (type === 'doubles') await getOrCreatePlayer(teamA.p2)
+      await getOrCreatePlayer(teamB.p1)
+      if (type === 'doubles') await getOrCreatePlayer(teamB.p2)
 
       // For now, we'll just use the first tournament available or create one
       let tournamentId = null
@@ -71,6 +72,7 @@ export default function MatchSetup() {
           settings: {
             ...settings,
             type,
+            tournamentName: tournamentName.trim() || 'Arena Central',
             players: {
               teamA: [teamA.p1, teamA.p2].filter(Boolean),
               teamB: [teamB.p1, teamB.p2].filter(Boolean)
@@ -110,6 +112,19 @@ export default function MatchSetup() {
         </header>
 
         <section className="bg-surface rounded-3xl p-8 border border-white/5 shadow-xl space-y-8">
+          {/* Tournament Name */}
+          <div className="space-y-4">
+            <label className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+              Nome do Torneio
+            </label>
+            <input 
+              placeholder="Ex: Copa Arena Beach, Torneio BT..."
+              className="w-full bg-background border-none rounded-xl p-4 text-sm focus:ring-2 focus:ring-primary transition-all font-bold"
+              value={tournamentName}
+              onChange={(e) => setTournamentName(e.target.value)}
+            />
+          </div>
+
           {/* Game Type */}
           <div className="space-y-4">
             <label className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">

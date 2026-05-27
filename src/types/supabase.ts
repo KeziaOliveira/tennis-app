@@ -9,101 +9,117 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
-      players: {
-        Row: {
-          id: string
-          name: string
-          country: string | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          name: string
-          country?: string | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          name?: string
-          country?: string | null
-          created_at?: string
-        }
-      }
-      tournaments: {
-        Row: {
-          id: string
-          name: string
-          created_by: string | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          name: string
-          created_by?: string | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          name?: string
-          created_by?: string | null
-          created_at?: string
-        }
-      }
       matches: {
         Row: {
           id: string
           tournament_id: string | null
-          status: 'waiting' | 'live' | 'finished'
-          current_server: string | null
-          score: Json
-          settings: Json
+          status: 'waiting' | 'live' | 'finished' | null
+          score: any
+          settings: any
+          started_at: string | null
+          paused_at: string | null
+          elapsed: number | null
+          is_running: boolean | null
           created_at: string
         }
         Insert: {
           id?: string
           tournament_id?: string | null
-          status?: 'waiting' | 'live' | 'finished'
-          current_server?: string | null
-          score?: Json
-          settings?: Json
+          status?: 'waiting' | 'live' | 'finished' | null
+          score?: any
+          settings?: any
+          started_at?: string | null
+          paused_at?: string | null
+          elapsed?: number | null
+          is_running?: boolean | null
           created_at?: string
         }
         Update: {
           id?: string
           tournament_id?: string | null
-          status?: 'waiting' | 'live' | 'finished'
-          current_server?: string | null
-          score?: Json
-          settings?: Json
+          status?: 'waiting' | 'live' | 'finished' | null
+          score?: any
+          settings?: any
+          started_at?: string | null
+          paused_at?: string | null
+          elapsed?: number | null
+          is_running?: boolean | null
           created_at?: string
         }
+        Relationships: []
       }
       points: {
         Row: {
           id: string
-          match_id: string | null
-          server: string | null
-          winner: string | null
+          match_id: string
+          winner: 'a' | 'b' | null
           type: string | null
           created_at: string
         }
         Insert: {
           id?: string
-          match_id?: string | null
-          server?: string | null
-          winner?: string | null
+          match_id: string
+          winner?: 'a' | 'b' | null
           type?: string | null
           created_at?: string
         }
         Update: {
           id?: string
-          match_id?: string | null
-          server?: string | null
-          winner?: string | null
+          match_id?: string
+          winner?: 'a' | 'b' | null
           type?: string | null
           created_at?: string
         }
+        Relationships: []
       }
+      players: {
+        Row: {
+          id: string
+          name: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      tournaments: {
+        Row: {
+          id: string
+          name: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
     }
   }
 }

@@ -14,6 +14,10 @@ export interface MatchSettings {
   tiebreak: boolean
   statsEnabled: boolean
   timerEnabled: boolean
+  players?: {
+    teamA: string[]
+    teamB: string[]
+  }
 }
 
 export interface TimerState {
@@ -36,6 +40,7 @@ interface MatchState {
   addPoint: (team: 'a' | 'b') => Promise<void>
   undoLastPoint: () => Promise<void>
   toggleTimer: () => Promise<void>
+  finishMatch: () => Promise<void>
   syncWithSupabase: (data: any) => void
 }
 
@@ -70,7 +75,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   status: 'waiting',
 
   setMatch: async (matchId) => {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('matches')
       .select('*')
       .eq('id', matchId)
@@ -78,7 +83,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
 
     if (data) {
       // Defensive merging to prevent crashes with old data
-      const dbScore = data.score || {}
+      const dbScore = (data.score as any) || {}
       set({ 
         matchId,
         score: {
@@ -86,8 +91,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
           games: dbScore.games || { a: 0, b: 0 },
           points: dbScore.points || { a: 0, b: 0 }
         },
-        settings: { ...INITIAL_SETTINGS, ...(data.settings || {}) },
-        status: data.status,
+        settings: { ...INITIAL_SETTINGS, ...(data.settings as object || {}) },
+        status: (data.status || 'waiting') as 'waiting' | 'live' | 'finished',
         timer: {
           startedAt: data.started_at,
           pausedAt: data.paused_at,
@@ -110,7 +115,6 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     if (!newScore.sets) newScore.sets = []
 
     const teamKey = team
-    const otherKey = team === 'a' ? 'b' : 'a'
 
     // Simple Tennis logic for Beach Tennis (No Ad)
     // Points: 0 -> 15 -> 30 -> 40 -> Game
@@ -195,7 +199,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     }
 
     set({ score: reconstructedScore })
-    await supabase.from('matches').update({ score: reconstructedScore }).eq('id', state.matchId)
+    await supabase.from('matches').update({ score: reconstructedScore as any }).eq('id', state.matchId)
   },
 
   finishMatch: async () => {
@@ -203,7 +207,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     if (!state.matchId) return
 
     const update = {
-      status: 'finished',
+      status: 'finished' as const,
       is_running: false,
       paused_at: new Date().toISOString()
     }
@@ -257,7 +261,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
         points: dbScore.points || { a: 0, b: 0 }
       },
       settings: data.settings || INITIAL_SETTINGS,
-      status: data.status,
+      status: (data.status || 'waiting') as 'waiting' | 'live' | 'finished',
       timer: {
         startedAt: data.started_at,
         pausedAt: data.paused_at,

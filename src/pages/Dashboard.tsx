@@ -1,13 +1,38 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../services/supabase/client'
-import { Plus, Play, Share2, LogOut, User, BarChart3, Timer, User as UserIcon } from 'lucide-react'
+import { Plus, Play, LogOut, BarChart3, Timer, User as UserIcon } from 'lucide-react'
 import { useNavigate } from 'react-router'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import { toast } from 'sonner'
+import { useTheme } from '../theme/theme-provider'
+
+const SunIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" {...props}>
+    <path d="M320 32C328.4 32 336.3 36.4 340.6 43.7L396.1 136.3L500.9 110C509.1 108 517.8 110.4 523.7 116.3C529.6 122.2 532 131 530 139.1L503.7 243.8L596.4 299.3C603.6 303.6 608.1 311.5 608.1 319.9C608.1 328.3 603.7 336.2 596.4 340.5L503.7 396.1L530 500.8C532 509 529.6 517.7 523.6 523.6C517.8 529.5 509 532 500.9 530L396.2 503.7L340.7 596.4C336.4 603.6 328.5 608.1 320.1 608.1C311.7 608.1 303.8 603.7 299.5 596.4L243.9 503.7L139.2 530C131 532 122.4 529.6 116.4 523.7C110.4 517.8 108 509 110 500.8L136.2 396.1L43.6 340.6C36.4 336.2 32 328.4 32 320C32 311.6 36.4 303.7 43.7 299.4L136.3 243.9L110 139.1C108 130.9 110.3 122.3 116.3 116.3C122.3 110.3 131 108 139.2 110L243.9 136.2L299.4 43.6L301.2 41C305.7 35.3 312.6 31.9 320 31.9zM320 176C240.5 176 176 240.5 176 320C176 399.5 240.5 464 320 464C399.5 464 464 399.5 464 320C464 240.5 399.5 176 320 176zM320 416C267 416 224 373 224 320C224 267 267 224 320 224C373 224 416 267 416 320C416 373 373 416 320 416z" />
+  </svg>
+)
+
+const MoonIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" {...props}>
+    <path d="M320 64C178.6 64 64 178.6 64 320C64 461.4 178.6 576 320 576C388.8 576 451.3 548.8 497.3 504.6C504.6 497.6 506.7 486.7 502.6 477.5C498.5 468.3 488.9 462.6 478.8 463.4C473.9 463.8 469 464 464 464C362.4 464 280 381.6 280 280C280 207.9 321.5 145.4 382.1 115.2C391.2 110.7 396.4 100.9 395.2 90.8C394 80.7 386.6 72.5 376.7 70.3C358.4 66.2 339.4 64 320 64z" />
+  </svg>
+)
+
+const LinkIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" {...props}>
+    <path d="M451.5 160C434.9 160 418.8 164.5 404.7 172.7C388.9 156.7 370.5 143.3 350.2 133.2C378.4 109.2 414.3 96 451.5 96C537.9 96 608 166 608 252.5C608 294 591.5 333.8 562.2 363.1L491.1 434.2C461.8 463.5 422 480 380.5 480C294.1 480 224 410 224 323.5C224 322 224 320.5 224.1 319C224.6 301.3 239.3 287.4 257 287.9C274.7 288.4 288.6 303.1 288.1 320.8C288.1 321.7 288.1 322.6 288.1 323.4C288.1 374.5 329.5 415.9 380.6 415.9C405.1 415.9 428.6 406.2 446 388.8L517.1 317.7C534.4 300.4 544.2 276.8 544.2 252.3C544.2 201.2 502.8 159.8 451.7 159.8zM307.2 237.3C305.3 236.5 303.4 235.4 301.7 234.2C289.1 227.7 274.7 224 259.6 224C235.1 224 211.6 233.7 194.2 251.1L123.1 322.2C105.8 339.5 96 363.1 96 387.6C96 438.7 137.4 480.1 188.5 480.1C205 480.1 221.1 475.7 235.2 467.5C251 483.5 269.4 496.9 289.8 507C261.6 530.9 225.8 544.2 188.5 544.2C102.1 544.2 32 474.2 32 387.7C32 346.2 48.5 306.4 77.8 277.1L148.9 206C178.2 176.7 218 160.2 259.5 160.2C346.1 160.2 416 230.8 416 317.1C416 318.4 416 319.7 416 321C415.6 338.7 400.9 352.6 383.2 352.2C365.5 351.8 351.6 337.1 352 319.4C352 318.6 352 317.9 352 317.1C352 283.4 334 253.8 307.2 237.5z" />
+  </svg>
+)
 
 const TrophyIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" {...props}>
     <path d="M208.3 64L432.3 64C458.8 64 480.4 85.8 479.4 112.2C479.2 117.5 479 122.8 478.7 128L528.3 128C554.4 128 577.4 149.6 575.4 177.8C567.9 281.5 514.9 338.5 457.4 368.3C441.6 376.5 425.5 382.6 410.2 387.1C390 415.7 369 430.8 352.3 438.9L352.3 512L416.3 512C434 512 448.3 526.3 448.3 544C448.3 561.7 434 576 416.3 576L224.3 576C206.6 576 192.3 561.7 192.3 544C192.3 526.3 206.6 512 224.3 512L288.3 512L288.3 438.9C272.3 431.2 252.4 416.9 233 390.6C214.6 385.8 194.6 378.5 175.1 367.5C121 337.2 72.2 280.1 65.2 177.6C63.3 149.5 86.2 127.9 112.3 127.9L161.9 127.9C161.6 122.7 161.4 117.5 161.2 112.1C160.2 85.6 181.8 63.9 208.3 63.9zM165.5 176L113.1 176C119.3 260.7 158.2 303.1 198.3 325.6C183.9 288.3 172 239.6 165.5 176zM444 320.8C484.5 297 521.1 254.7 527.3 176L475 176C468.8 236.9 457.6 284.2 444 320.8z"/>
+  </svg>
+)
+
+const TrashIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" {...props}>
+    <path d="M232.7 69.9C237.1 56.8 249.3 48 263.1 48L377 48C390.8 48 403 56.8 407.4 69.9L416 96L512 96C529.7 96 544 110.3 544 128C544 145.7 529.7 160 512 160L128 160C110.3 160 96 145.7 96 128C96 110.3 110.3 96 128 96L224 96L232.7 69.9zM128 208L512 208L512 512C512 547.3 483.3 576 448 576L192 576C156.7 576 128 547.3 128 512L128 208zM216 272C202.7 272 192 282.7 192 296L192 488C192 501.3 202.7 512 216 512C229.3 512 240 501.3 240 488L240 296C240 282.7 229.3 272 216 272zM320 272C306.7 272 296 282.7 296 296L296 488C296 501.3 306.7 512 320 512C333.3 512 344 501.3 344 488L344 296C344 282.7 333.3 272 320 272zM424 272C410.7 272 400 282.7 400 296L400 488C400 501.3 410.7 512 424 512C437.3 512 448 501.3 448 488L448 296C448 282.7 437.3 272 424 272z"/>
   </svg>
 )
 
@@ -57,30 +82,71 @@ const MatchCard = ({ match, onRefresh }: { match: any, onRefresh: () => void }) 
     toast.success('Partida finalizada!')
   }
 
+  const deleteMatch = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!confirm('Deseja realmente apagar esta partida permanentemente?')) return
+
+    try {
+      // First delete dependent points
+      await supabase.from('points').delete().eq('match_id', match.id)
+      
+      // Then delete the match itself
+      const { error } = await supabase.from('matches').delete().eq('id', match.id)
+      if (error) throw error
+
+      onRefresh()
+      toast.success('Partida removida!')
+    } catch (err: any) {
+      toast.error('Erro ao apagar a partida: ' + (err.message || err))
+    }
+  }
+
   return (
     <div 
       className="group relative bg-surface p-6 rounded-3xl border border-surface/50 hover:border-primary/50 transition-all cursor-pointer shadow-sm hover:shadow-xl"
       onClick={() => navigate(`/match/${match.id}`)}
     >
+      {/* Card Header */}
       <div className="flex justify-between items-start mb-6">
-        <div className="flex flex-col gap-1">
-          <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest w-max ${match.status === 'live' ? 'bg-success/10 text-success' : 'bg-text-muted/10 text-text-muted'}`}>
-             {match.status}
+        {/* Left: Tournament Name and Timer */}
+        <div className="flex flex-col gap-1.5 min-w-0 pr-2">
+          <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em] opacity-70 truncate">
+            {match.settings?.tournamentName || 'Arena Central'}
           </span>
-          <div className="flex items-center gap-1.5 text-text-muted mt-1">
-             <Timer className="w-3 h-3" />
+          <div className="flex items-center gap-1.5 text-text-muted">
+             <Timer className="w-3.5 h-3.5" />
              <span className="text-xs font-mono font-bold">{formatTime(elapsed)}</span>
           </div>
         </div>
-        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button onClick={copyOverlay} className="p-2 hover:bg-background rounded-xl transition-colors text-primary" title="Copiar Overlay">
-            <Share2 className="w-4 h-4" />
-          </button>
-          {match.status === 'live' && (
-            <button onClick={finishMatch} className="p-2 hover:bg-background rounded-xl transition-colors text-error" title="Finalizar Partida">
-              <TrophyIcon className="w-4 h-4 fill-current" />
+
+        {/* Right: Badge and Actions */}
+        <div className="flex items-center justify-end gap-1.5">
+          {/* Badge */}
+          <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shrink-0 transition-all duration-300 flex items-center ${match.status === 'live' ? 'bg-success/10 text-success' : 'bg-text-muted/10 text-text-muted'}`}>
+             {match.status === 'live' ? (
+                <>
+                  <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse mr-2"></span>
+                  {match.status}
+                </>
+             ) : (
+                match.status
+             )}
+          </span>
+
+          {/* Actions */}
+          <div className="flex items-center gap-1 overflow-hidden transition-all duration-300 max-w-0 opacity-0 group-hover:max-w-[120px] group-hover:opacity-100">
+            <button onClick={copyOverlay} className="p-1.5 hover:bg-surface rounded-xl transition-colors text-primary shrink-0" title="Copiar Link do Overlay">
+              <LinkIcon className="w-4 h-4 fill-current" />
             </button>
-          )}
+            {match.status === 'live' && (
+              <button onClick={finishMatch} className="p-1.5 hover:bg-surface rounded-xl transition-colors text-error shrink-0" title="Finalizar Partida">
+                <TrophyIcon className="w-4 h-4 fill-current" />
+              </button>
+            )}
+            <button onClick={deleteMatch} className="p-1.5 hover:bg-surface rounded-xl transition-colors text-error shrink-0" title="Apagar Partida">
+              <TrashIcon className="w-4 h-4 fill-current" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -130,6 +196,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const navigate = useNavigate()
+  const { theme, setTheme } = useTheme()
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -144,7 +211,7 @@ const Dashboard = () => {
   }
 
   const fetchMatches = async () => {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('matches')
       .select('*')
       .order('created_at', { ascending: false })
@@ -158,55 +225,84 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-8">
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-surface pb-8">
-        <div className="flex flex-col gap-6 w-full">
-          <div className="flex justify-between items-center w-full">
-             <div className="flex items-center gap-3 bg-surface px-5 py-2.5 rounded-2xl border border-white/5 shadow-sm">
-                <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary border border-primary/20">
-                   <UserIcon className="w-5 h-5" />
-                </div>
-                <div className="flex flex-col">
-                   <span className="text-[10px] font-black text-text-muted uppercase tracking-[0.15em] leading-none mb-1">Operador</span>
-                   <span className="text-sm font-black truncate max-w-[200px] leading-none">{user?.email?.split('@')[0]}</span>
-                </div>
-             </div>
-             <button 
-                onClick={handleLogout}
-                className="flex items-center gap-2 text-text-muted hover:text-error transition-all p-3 hover:bg-error/5 rounded-2xl"
-                title="Sair"
-             >
-                <LogOut className="w-5 h-5" />
-             </button>
+    <div className="min-h-screen bg-background">
+      {/* ── Premium sticky top bar ── */}
+      <header className="sticky top-0 z-30 w-full bg-background/80 backdrop-blur-xl border-b border-surface/60 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
+          {/* Brand */}
+          <div className="flex items-center gap-3">
+            <TrophyIcon className="w-5 h-5 fill-current text-primary" />
+            <span className="text-sm font-black uppercase tracking-[0.2em] text-text">Scoreboard<span className="text-primary">BT</span></span>
           </div>
+
+          {/* Right: user + actions */}
+          <div className="flex items-center gap-1">
+            {/* User pill */}
+            <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-surface border border-white/5 mr-3">
+              <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary border border-primary/20 shrink-0">
+                <UserIcon className="w-3.5 h-3.5" />
+              </div>
+              <span className="text-xs font-black truncate max-w-[140px]">{user?.email?.split('@')[0]}</span>
+            </div>
+
+            {/* Theme toggle */}
+            <button
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="p-2.5 hover:bg-surface rounded-xl transition-all hover:scale-105 active:scale-95"
+              title={theme === 'dark' ? 'Mudar para modo claro' : 'Mudar para modo escuro'}
+            >
+              {theme === 'dark' ? (
+                <SunIcon className="w-4 h-4 fill-current text-accent" />
+              ) : (
+                <MoonIcon className="w-4 h-4 fill-current text-primary" />
+              )}
+            </button>
+
+            {/* Logout */}
+            <button
+              onClick={handleLogout}
+              className="p-2.5 text-text-muted hover:text-error hover:bg-error/5 rounded-xl transition-all"
+              title="Sair"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* ── Page content ── */}
+      <main className="max-w-7xl mx-auto px-6 py-10 space-y-10">
+        {/* Page title & Actions */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <h1 className="text-5xl font-black italic uppercase tracking-tighter leading-none mb-2">Dashboard</h1>
             <p className="text-base text-text-muted font-medium">Controle central de torneio</p>
           </div>
+          <button
+            onClick={createMatch}
+            className="flex items-center gap-3 bg-primary text-primary-foreground px-8 py-4 rounded-3xl font-black uppercase italic shadow-2xl shadow-primary/30 hover:scale-[1.02] active:scale-[0.98] transition-all whitespace-nowrap text-lg"
+          >
+            <Plus className="w-6 h-6" />
+            Novo Torneio
+          </button>
         </div>
-        <button 
-          onClick={createMatch}
-          className="flex items-center gap-3 bg-primary text-primary-foreground px-8 py-4 rounded-3xl font-black uppercase italic shadow-2xl shadow-primary/30 hover:scale-[1.02] active:scale-[0.98] transition-all whitespace-nowrap text-lg"
-        >
-          <Plus className="w-6 h-6" />
-          Novo Evento
-        </button>
-      </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-8">
-        {loading ? (
-          <div className="col-span-full py-20 text-center text-text-muted font-bold italic animate-pulse">Sincronizando partidas...</div>
-        ) : matches.length === 0 ? (
-          <div className="col-span-full py-20 text-center rounded-3xl border-2 border-dashed border-surface bg-surface/5">
-            <TrophyIcon className="mx-auto h-16 w-16 text-surface mb-6 opacity-20 fill-current" />
-            <p className="text-text-muted font-black uppercase tracking-widest italic">Nenhuma partida registrada</p>
-          </div>
-        ) : (
-          matches.map((match) => (
-            <MatchCard key={match.id} match={match} onRefresh={fetchMatches} />
-          ))
-        )}
-      </div>
+        {/* Matches grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {loading ? (
+            <div className="col-span-full py-20 text-center text-text-muted font-bold italic animate-pulse">Sincronizando partidas...</div>
+          ) : matches.length === 0 ? (
+            <div className="col-span-full py-20 text-center rounded-3xl border-2 border-dashed border-surface bg-surface/5">
+              <TrophyIcon className="mx-auto h-16 w-16 text-surface mb-6 opacity-20 fill-current" />
+              <p className="text-text-muted font-black uppercase tracking-widest italic">Nenhuma partida registrada</p>
+            </div>
+          ) : (
+            matches.map((match) => (
+              <MatchCard key={match.id} match={match} onRefresh={fetchMatches} />
+            ))
+          )}
+        </div>
+      </main>
     </div>
   )
 }

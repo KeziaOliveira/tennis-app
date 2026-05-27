@@ -11,6 +11,7 @@ const TrophyIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 const Login = () => {
   const [isRegister, setIsRegister] = useState(false)
+  const [isForgotPassword, setIsForgotPassword] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
@@ -24,7 +25,18 @@ const Login = () => {
     setLoading(true)
 
     try {
-      if (isRegister) {
+      if (isForgotPassword) {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: window.location.origin + '/reset-password',
+        })
+
+        if (error) {
+          toast.error(error.message)
+        } else {
+          toast.success('E-mail de recuperação enviado com sucesso! Verifique sua caixa de entrada.')
+          setIsForgotPassword(false)
+        }
+      } else if (isRegister) {
         if (password.length < 6) {
           toast.error('A senha deve ter pelo menos 6 caracteres.')
           setLoading(false)
@@ -80,48 +92,50 @@ const Login = () => {
             <TrophyIcon className="h-8 w-8 fill-current" />
           </div>
           <h2 className="mt-6 text-3xl font-black italic uppercase tracking-tighter text-text">
-            ScoreBoard BT
+            {isForgotPassword ? 'Recuperar Senha' : <>Scoreboard<span className="text-primary">BT</span></>}
           </h2>
           <p className="mt-2 text-sm text-text-muted">
-            Gestão profissional de placares
+            {isForgotPassword ? 'Digite seu e-mail para receber as instruções' : 'Gestão profissional de placares'}
           </p>
         </div>
 
-        {/* Tab Selection */}
-        <div className="flex p-1 bg-background rounded-2xl border border-surface-foreground/5 relative z-10">
-          <button
-            type="button"
-            onClick={() => {
-              setIsRegister(false)
-              toast.dismiss()
-            }}
-            className={`flex-1 py-2.5 text-xs font-black uppercase italic tracking-wider rounded-xl transition-all ${
-              !isRegister
-                ? 'bg-surface text-primary shadow-sm'
-                : 'text-text-muted hover:text-text'
-            }`}
-          >
-            Entrar
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setIsRegister(true)
-              toast.dismiss()
-            }}
-            className={`flex-1 py-2.5 text-xs font-black uppercase italic tracking-wider rounded-xl transition-all ${
-              isRegister
-                ? 'bg-surface text-primary shadow-sm'
-                : 'text-text-muted hover:text-text'
-            }`}
-          >
-            Criar Conta
-          </button>
-        </div>
+        {/* Tab Selection (Hidden during password recovery) */}
+        {!isForgotPassword && (
+          <div className="flex p-1 bg-background rounded-2xl border border-surface-foreground/5 relative z-10">
+            <button
+              type="button"
+              onClick={() => {
+                setIsRegister(false)
+                toast.dismiss()
+              }}
+              className={`flex-1 py-2.5 text-xs font-black uppercase italic tracking-wider rounded-xl transition-all ${
+                !isRegister
+                  ? 'bg-surface text-primary shadow-sm'
+                  : 'text-text-muted hover:text-text'
+              }`}
+            >
+              Entrar
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setIsRegister(true)
+                toast.dismiss()
+              }}
+              className={`flex-1 py-2.5 text-xs font-black uppercase italic tracking-wider rounded-xl transition-all ${
+                isRegister
+                  ? 'bg-surface text-primary shadow-sm'
+                  : 'text-text-muted hover:text-text'
+              }`}
+            >
+              Criar Conta
+            </button>
+          </div>
+        )}
 
         <form className="mt-6 space-y-5 relative z-10" onSubmit={handleSubmit}>
           <div className="space-y-4">
-            {isRegister && (
+            {isRegister && !isForgotPassword && (
               <div className="relative">
                 <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-text-muted">
                   <User className="h-4 w-4" />
@@ -151,31 +165,48 @@ const Login = () => {
               />
             </div>
 
-            <div className="relative">
-              <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-text-muted">
-                <Lock className="h-4 w-4" />
-              </span>
-              <input
-                type={showPassword ? 'text' : 'password'}
-                required
-                className="w-full rounded-2xl bg-background border border-surface-foreground/5 py-4 pl-11 pr-12 text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                placeholder="Senha"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+            {!isForgotPassword && (
+              <div className="relative">
+                <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-text-muted">
+                  <Lock className="h-4 w-4" />
+                </span>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  className="w-full rounded-2xl bg-background border border-surface-foreground/5 py-4 pl-11 pr-12 text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                  placeholder="Senha"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 flex items-center pr-4 text-text-muted hover:text-text transition-colors"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
+
+          {!isRegister && !isForgotPassword && (
+            <div className="text-right">
               <button
                 type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 flex items-center pr-4 text-text-muted hover:text-text transition-colors"
+                onClick={() => {
+                  setIsForgotPassword(true)
+                  toast.dismiss()
+                }}
+                className="text-xs font-black uppercase italic tracking-wider text-primary hover:underline cursor-pointer"
               >
-                {showPassword ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
+                Esqueceu a senha?
               </button>
             </div>
-          </div>
+          )}
 
           <button
             disabled={loading}
@@ -188,9 +219,28 @@ const Login = () => {
                 <span>Processando...</span>
               </>
             ) : (
-              <span>{isRegister ? 'Criar Minha Conta' : 'Entrar no Sistema'}</span>
+              <span>
+                {isForgotPassword
+                  ? 'Enviar E-mail'
+                  : isRegister
+                  ? 'Criar Minha Conta'
+                  : 'Entrar no Sistema'}
+              </span>
             )}
           </button>
+
+          {isForgotPassword && (
+            <button
+              type="button"
+              onClick={() => {
+                setIsForgotPassword(false)
+                toast.dismiss()
+              }}
+              className="w-full text-center text-xs font-black uppercase italic tracking-wider text-text-muted hover:text-text cursor-pointer mt-4"
+            >
+              Voltar para o login
+            </button>
+          )}
         </form>
       </div>
     </div>

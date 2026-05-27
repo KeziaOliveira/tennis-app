@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router'
 import { supabase } from '../services/supabase/client'
-import { Trophy, ChevronLeft, Activity, Users, BarChart3 } from 'lucide-react'
+import { ChevronLeft, Activity, BarChart3 } from 'lucide-react'
 
 export default function MatchStats() {
   const { matchId } = useParams()
