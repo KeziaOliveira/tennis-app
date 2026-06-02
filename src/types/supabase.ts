@@ -54,6 +54,8 @@ export interface Database {
           match_id: string
           winner: 'a' | 'b' | null
           type: string | null
+          stroke_type: string | null
+          metadata: Json | null
           created_at: string
         }
         Insert: {
@@ -61,6 +63,8 @@ export interface Database {
           match_id: string
           winner?: 'a' | 'b' | null
           type?: string | null
+          stroke_type?: string | null
+          metadata?: Json | null
           created_at?: string
         }
         Update: {
@@ -68,6 +72,8 @@ export interface Database {
           match_id?: string
           winner?: 'a' | 'b' | null
           type?: string | null
+          stroke_type?: string | null
+          metadata?: Json | null
           created_at?: string
         }
         Relationships: []

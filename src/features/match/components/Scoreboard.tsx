@@ -133,10 +133,10 @@ const Scoreboard = () => {
           </span>
           <div 
             onClick={() => status !== 'finished' && toggleTimer()}
-            className={`flex items-center gap-3 px-5 py-2 rounded-2xl cursor-pointer transition-all border shadow-lg ${timer.isRunning ? 'bg-primary/10 border-primary/50 text-primary shadow-primary/10' : 'bg-surface border-white/5 text-text-muted hover:bg-surface/50'}`}
+            className={`flex items-center gap-3 px-5 py-2 rounded-2xl cursor-pointer transition-all border shadow-lg ${timer.isRunning ? 'bg-primary/10 border-primary/50 text-primary shadow-primary/10' : 'bg-surface border-text/5 text-text-muted hover:bg-surface/50'}`}
           >
             <Timer className={`w-4 h-4 ${timer.isRunning ? 'animate-pulse text-primary' : ''}`} />
-            <span className="text-xl font-black font-mono leading-none tracking-tighter">
+            <span className="text-xl font-black font-mono leading-none tracking-tighter text-text">
               {formatTime(elapsedSeconds)}
             </span>
           </div>
@@ -163,11 +163,15 @@ const Scoreboard = () => {
       <main className="flex-1 flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-surface/20">
         {/* Team A */}
         <div className="flex-1 flex flex-col relative overflow-hidden group">
-          <div className="absolute top-6 left-6 flex items-center gap-3">
-            <div className="w-2.5 h-10 bg-primary rounded-full shadow-[0_0_15px_rgba(var(--primary-rgb),0.5)]" />
-            <h2 className="text-3xl font-black uppercase italic tracking-tighter truncate max-w-[300px]">
-              {players.teamA.join(' / ')}
-            </h2>
+          <div className="absolute top-6 left-6 flex flex-col gap-2">
+            {players.teamA.map((name: string, i: number) => (
+              <div key={i} className="flex items-center gap-3">
+                <div className="w-2.5 h-8 bg-primary rounded-full shadow-[0_0_10px_rgba(var(--primary-rgb),0.5)]" />
+                <span className="font-black uppercase italic tracking-tighter text-text truncate max-w-[300px] text-2xl md:text-3xl pr-2">
+                  {name}
+                </span>
+              </div>
+            ))}
           </div>
           
           <button 
@@ -184,9 +188,9 @@ const Scoreboard = () => {
              <div className="flex gap-8">
                 <div className="flex flex-col">
                   <span className="text-[10px] text-text-muted uppercase font-black tracking-widest mb-1 opacity-50">Games</span>
-                  <span className="text-6xl font-black leading-none">{score?.games?.a ?? 0}</span>
+                  <span className="text-6xl font-black leading-none text-text">{score?.games?.a ?? 0}</span>
                 </div>
-                <div className="flex flex-col border-l border-white/5 pl-8">
+                <div className="flex flex-col border-l border-text/5 pl-8">
                   <span className="text-[10px] text-text-muted uppercase font-black tracking-widest mb-1 opacity-50">Sets</span>
                   <div className="flex gap-2">
                     {(score?.sets ?? []).map((s, i) => (
@@ -202,11 +206,15 @@ const Scoreboard = () => {
 
         {/* Team B */}
         <div className="flex-1 flex flex-col relative overflow-hidden group bg-surface/5">
-          <div className="absolute top-6 right-6 flex items-center gap-3 flex-row-reverse text-right">
-            <div className="w-2.5 h-10 bg-accent rounded-full shadow-[0_0_15px_rgba(var(--accent-rgb),0.5)]" />
-            <h2 className="text-3xl font-black uppercase italic tracking-tighter truncate max-w-[300px]">
-              {players.teamB.join(' / ')}
-            </h2>
+          <div className="absolute top-6 right-6 flex flex-col items-end gap-2 text-right">
+            {players.teamB.map((name: string, i: number) => (
+              <div key={i} className="flex items-center gap-3 flex-row-reverse">
+                <div className="w-2.5 h-8 bg-accent rounded-full shadow-[0_0_10px_rgba(var(--accent-rgb),0.5)]" />
+                <span className="font-black uppercase italic tracking-tighter text-text truncate max-w-[300px] text-2xl md:text-3xl pr-2">
+                  {name}
+                </span>
+              </div>
+            ))}
           </div>
 
           <button 
@@ -222,7 +230,7 @@ const Scoreboard = () => {
           <div className="p-8 flex justify-between items-end border-t border-surface/10 bg-surface/5">
              <TrophyIcon className="w-10 h-10 text-accent/5 fill-current" />
              <div className="flex gap-8 text-right">
-                <div className="flex flex-col items-end border-r border-white/5 pr-8">
+                <div className="flex flex-col items-end border-r border-text/5 pr-8">
                   <span className="text-[10px] text-text-muted uppercase font-black tracking-widest mb-1 opacity-50">Sets</span>
                   <div className="flex gap-2">
                     {(score?.sets ?? []).map((s, i) => (
@@ -233,7 +241,7 @@ const Scoreboard = () => {
                 </div>
                 <div className="flex flex-col items-end">
                   <span className="text-[10px] text-text-muted uppercase font-black tracking-widest mb-1 opacity-50">Games</span>
-                  <span className="text-6xl font-black leading-none">{score?.games?.b ?? 0}</span>
+                  <span className="text-6xl font-black leading-none text-text">{score?.games?.b ?? 0}</span>
                 </div>
              </div>
           </div>
@@ -244,18 +252,18 @@ const Scoreboard = () => {
       <footer className="p-4 bg-surface grid grid-cols-4 gap-6 border-t border-surface shadow-[0_-20px_60px_rgba(0,0,0,0.3)] relative z-20">
          <button 
           onClick={copyOverlayLink}
-          className="flex flex-col items-center justify-center p-4 rounded-3xl bg-background hover:bg-background/80 border border-white/5 transition-all hover:scale-105 active:scale-95 shadow-lg"
+          className="flex flex-col items-center justify-center p-4 rounded-3xl bg-background hover:bg-background/80 border border-text/5 transition-all hover:scale-105 active:scale-95 shadow-lg"
          >
             <Share2 className="w-6 h-6 mb-2 text-primary" />
-            <span className="text-[10px] uppercase font-black tracking-widest leading-none">Overlay</span>
+            <span className="text-[10px] uppercase font-black tracking-widest leading-none text-text">Overlay</span>
          </button>
          
          <button 
           onClick={() => setIsStatsOpen(true)}
-          className="flex flex-col items-center justify-center p-4 rounded-3xl bg-background hover:bg-background/80 border border-white/5 transition-all hover:scale-105 active:scale-95 shadow-lg"
+          className="flex flex-col items-center justify-center p-4 rounded-3xl bg-background hover:bg-background/80 border border-text/5 transition-all hover:scale-105 active:scale-95 shadow-lg"
          >
             <Activity className="w-6 h-6 mb-2 text-success" />
-            <span className="text-[10px] uppercase font-black tracking-widest leading-none">Stats</span>
+            <span className="text-[10px] uppercase font-black tracking-widest leading-none text-text">Stats</span>
          </button>
 
          <button 
@@ -281,6 +289,8 @@ const Scoreboard = () => {
           matchId={matchId} 
           isOpen={isStatsOpen} 
           onClose={() => setIsStatsOpen(false)} 
+          settings={settings}
+          currentSet={(score?.sets?.length || 0) + 1}
         />
       )}
     </div>

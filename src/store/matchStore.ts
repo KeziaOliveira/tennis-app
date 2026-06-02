@@ -144,8 +144,11 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     await supabase.from('points').insert({
       match_id: state.matchId,
       winner: team,
-      type: 'point'
-    })
+      type: 'point',
+      metadata: {
+        set_number: state.score.sets.length + 1
+      }
+    } as any)
   },
 
   undoLastPoint: async () => {
