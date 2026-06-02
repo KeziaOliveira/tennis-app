@@ -18,6 +18,7 @@ export interface MatchSettings {
     teamA: string[]
     teamB: string[]
   }
+  activeMessage?: string | null
 }
 
 export interface TimerState {
@@ -41,6 +42,7 @@ interface MatchState {
   undoLastPoint: () => Promise<void>
   toggleTimer: () => Promise<void>
   finishMatch: () => Promise<void>
+  setActiveMessage: (msg: string | null) => Promise<void>
   syncWithSupabase: (data: any) => void
 }
 
@@ -101,6 +103,19 @@ export const useMatchStore = create<MatchState>((set, get) => ({
         }
       })
     }
+  },
+
+  setActiveMessage: async (msg) => {
+    const state = get()
+    if (!state.matchId) return
+
+    const newSettings = { ...state.settings, activeMessage: msg }
+    set({ settings: newSettings })
+
+    await supabase
+      .from('matches')
+      .update({ settings: newSettings as any })
+      .eq('id', state.matchId)
   },
 
   addPoint: async (team) => {

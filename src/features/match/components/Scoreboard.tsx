@@ -160,7 +160,15 @@ const Scoreboard = () => {
       </header>
 
       {/* Main Scoreboard Area */}
-      <main className="flex-1 flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-surface/20">
+      <main className="flex-1 flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-surface/20 relative">
+        {/* Active Message Banner */}
+        {settings?.activeMessage && (
+          <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-8 fade-in duration-300 w-full max-w-xl px-4 pointer-events-none">
+            <div className="bg-[#FFEA00]/90 backdrop-blur-md text-black/90 font-black uppercase italic tracking-tighter text-2xl md:text-3xl py-3 px-8 text-center rounded-2xl shadow-[0_10px_40px_rgba(255,234,0,0.3)] border border-[#FFEA00]/50">
+              {settings.activeMessage}
+            </div>
+          </div>
+        )}
         {/* Team A */}
         <div className="flex-1 flex flex-col relative overflow-hidden group">
           <div className="absolute top-6 left-6 flex flex-col gap-2">

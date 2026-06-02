@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { supabase } from '../../../services/supabase/client'
-import { X, User } from 'lucide-react'
+import { X, User, MessageSquare, BarChart3, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
-import type { MatchSettings } from '../../../store/matchStore'
+import { useMatchStore, type MatchSettings } from '../../../store/matchStore'
 
 interface StatsModalProps {
   matchId: string
@@ -48,6 +48,10 @@ export default function StatsModal({ matchId, isOpen, onClose, settings, current
   const [servingAction, setServingAction] = useState<string | null>(null)
   const [returningPlayer, setReturningPlayer] = useState<string | null>(null)
   const [returningAction, setReturningAction] = useState<string>('NONE')
+  const [activeTab, setActiveTab] = useState<'stats' | 'messages'>('stats')
+  const [selectedMessage, setSelectedMessage] = useState<string | null>(null)
+  
+  const { setActiveMessage } = useMatchStore()
 
   if (!isOpen) return null
 
@@ -161,7 +165,7 @@ export default function StatsModal({ matchId, isOpen, onClose, settings, current
         {/* Header */}
         <div className="flex justify-between items-center px-8 pt-8 pb-4">
           <div>
-            <h2 className="text-xl font-black italic uppercase tracking-tighter">Registrar Ação</h2>
+            <h2 className="text-xl font-black italic uppercase tracking-tighter">Painel de Controle</h2>
             <p className="text-[11px] text-text-muted mt-0.5">
               {settings?.tournamentName || 'Partida'}
             </p>
@@ -174,9 +178,37 @@ export default function StatsModal({ matchId, isOpen, onClose, settings, current
           </button>
         </div>
 
-        <div className="px-8 pb-8 space-y-6 max-h-[80vh] overflow-y-auto">
-          {/* ── SECTION 1: SERVING PLAYER ── */}
-          <div className="space-y-4">
+        {/* Tabs */}
+        <div className="flex px-8 gap-4 border-b border-white/5 pb-4">
+          <button
+            onClick={() => setActiveTab('stats')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-black uppercase tracking-widest transition-all ${
+              activeTab === 'stats'
+                ? 'bg-primary/20 text-primary border border-primary/30'
+                : 'text-text-muted hover:bg-white/5'
+            }`}
+          >
+            <BarChart3 className="w-4 h-4" />
+            Estatísticas
+          </button>
+          <button
+            onClick={() => setActiveTab('messages')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-black uppercase tracking-widest transition-all ${
+              activeTab === 'messages'
+                ? 'bg-[#FFEA00]/20 text-[#FFEA00] border border-[#FFEA00]/30'
+                : 'text-text-muted hover:bg-white/5'
+            }`}
+          >
+            <MessageSquare className="w-4 h-4" />
+            Mensagens
+          </button>
+        </div>
+
+        <div className="px-8 pb-6 space-y-4 pt-4 max-h-[75vh] overflow-y-auto">
+          {activeTab === 'stats' && (
+            <>
+              {/* ── SECTION 1: SERVING PLAYER ── */}
+          <div className="space-y-2">
             <p className="text-xs text-center font-black uppercase tracking-[0.2em] text-primary">
               Atleta no saque:
             </p>
@@ -211,7 +243,7 @@ export default function StatsModal({ matchId, isOpen, onClose, settings, current
           <div className="h-px bg-white/5" />
 
           {/* ── SECTION 2: RETURNING PLAYER ── */}
-          <div className="space-y-4">
+          <div className="space-y-2">
             <p className="text-xs text-center font-black uppercase tracking-[0.2em] text-accent">
               Atleta em execução:
             </p>
@@ -246,10 +278,76 @@ export default function StatsModal({ matchId, isOpen, onClose, settings, current
           <button
             onClick={handleConfirm}
             disabled={loading}
-            className="w-full bg-primary text-primary-foreground p-5 rounded-[1.5rem] font-black uppercase italic text-lg shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 mt-2"
+            className="w-full bg-primary text-primary-foreground p-3 rounded-xl font-black uppercase italic text-sm shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 mt-2"
           >
             {loading ? 'Salvando...' : 'Confirmar'}
           </button>
+            </>
+          )}
+
+          {activeTab === 'messages' && (
+            <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                {[
+                  'BREAK POINT',
+                  'NOME DO TORNEIO',
+                  'PONTO DO GAME',
+                  'PONTO DO JOGO',
+                  'SET ENCERRADO',
+                  'SET POINT',
+                  'SUPER TIE-BREAK',
+                  'TIE-BREAK',
+                  'TROCA DE LADO'
+                ].map((msg) => (
+                  <button
+                    key={msg}
+                    onClick={() => setSelectedMessage(msg)}
+                    className={`p-3 rounded-xl border-2 text-xs font-black uppercase tracking-tight transition-all ${
+                      selectedMessage === msg
+                        ? 'border-[#FFEA00] bg-[#FFEA00]/20 text-[#FFEA00] shadow-[0_0_15px_rgba(255,234,0,0.2)]'
+                        : 'border-white/5 bg-background text-text-muted hover:border-white/20 hover:text-white'
+                    }`}
+                  >
+                    {msg}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <button
+                  onClick={async () => {
+                    if (!selectedMessage) return toast.error('Selecione uma mensagem')
+                    setLoading(true)
+                    await setActiveMessage(selectedMessage)
+                    setLoading(false)
+                    toast.success('Mensagem enviada para a tela!')
+                    onClose() // Close modal after sending
+                  }}
+                  disabled={loading || !selectedMessage}
+                  className="flex-1 bg-[#FFEA00] text-black p-3 rounded-xl font-black uppercase italic text-sm shadow-lg shadow-[#FFEA00]/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
+                >
+                  {loading ? 'Enviando...' : 'Mostrar na Tela'}
+                </button>
+
+                <button
+                  onClick={async () => {
+                    setLoading(true)
+                    await setActiveMessage(null)
+                    setSelectedMessage(null)
+                    setLoading(false)
+                    toast.success('Mensagem removida!')
+                    onClose() // Close modal after clearing
+                  }}
+                  disabled={loading}
+                  className="px-6 bg-error/10 text-error border border-error/20 rounded-xl font-black uppercase tracking-widest flex flex-col items-center justify-center hover:bg-error/20 active:scale-95 transition-all"
+                  title="Limpar mensagem atual"
+                >
+                  <Trash2 className="w-5 h-5 mb-0.5" />
+                  <span className="text-[9px]">Limpar</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

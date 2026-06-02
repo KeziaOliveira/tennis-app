@@ -171,6 +171,13 @@ const Overlay = () => {
             </div>
           </div>
         </div>
+
+        {/* Active Message Banner */}
+        {match.settings?.activeMessage && (
+          <div className="bg-[#FFEA00] text-black font-black uppercase italic tracking-tighter text-xl py-2 px-4 text-center rounded-b-lg shadow-2xl animate-in fade-in slide-in-from-top-2 w-[450px]">
+            {match.settings.activeMessage}
+          </div>
+        )}
       </div>
     </div>
   )
