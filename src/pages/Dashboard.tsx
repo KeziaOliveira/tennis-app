@@ -195,8 +195,10 @@ const Dashboard = () => {
   const [matches, setMatches] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<SupabaseUser | null>(null)
+  const [showSavedStatsOnly, setShowSavedStatsOnly] = useState(false)
   const navigate = useNavigate()
   const { theme, setTheme } = useTheme()
+  const [selectedStat, setSelectedStat] = useState<any>(null)
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -278,31 +280,143 @@ const Dashboard = () => {
             <h1 className="text-5xl font-black italic uppercase tracking-tighter leading-none mb-2">Dashboard</h1>
             <p className="text-base text-text-muted font-medium">Controle central de torneio</p>
           </div>
-          <button
-            onClick={createMatch}
-            className="flex items-center gap-3 bg-primary text-primary-foreground px-8 py-4 rounded-3xl font-black uppercase italic shadow-2xl shadow-primary/30 hover:scale-[1.02] active:scale-[0.98] transition-all whitespace-nowrap text-lg"
-          >
-            <Plus className="w-6 h-6" />
-            Novo Torneio
-          </button>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <button
+              onClick={() => setShowSavedStatsOnly(!showSavedStatsOnly)}
+              className={`flex items-center justify-center gap-2 px-6 py-4 rounded-3xl font-black uppercase italic transition-all ${
+                showSavedStatsOnly 
+                  ? 'bg-primary/20 text-primary border-2 border-primary/30 shadow-lg shadow-primary/20' 
+                  : 'bg-surface text-text border-2 border-surface-foreground/5 hover:border-surface-foreground/20'
+              }`}
+            >
+              <BarChart3 className="w-5 h-5" />
+              {showSavedStatsOnly ? 'TODAS AS PARTIDAS' : 'ESTATÍSTICAS SALVAS'}
+            </button>
+            <button
+              onClick={createMatch}
+              className="flex items-center justify-center gap-3 bg-primary text-primary-foreground px-8 py-4 rounded-3xl font-black uppercase italic shadow-2xl shadow-primary/30 hover:scale-[1.02] active:scale-[0.98] transition-all whitespace-nowrap text-lg"
+            >
+              <Plus className="w-6 h-6" />
+              Novo Torneio
+            </button>
+          </div>
         </div>
 
-        {/* Matches grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {loading ? (
-            <div className="col-span-full py-20 text-center text-text-muted font-bold italic animate-pulse">Sincronizando partidas...</div>
-          ) : matches.length === 0 ? (
-            <div className="col-span-full py-20 text-center rounded-3xl border-2 border-dashed border-surface bg-surface/5">
-              <TrophyIcon className="mx-auto h-16 w-16 text-surface mb-6 opacity-20 fill-current" />
-              <p className="text-text-muted font-black uppercase tracking-widest italic">Nenhuma partida registrada</p>
-            </div>
-          ) : (
-            matches.map((match) => (
-              <MatchCard key={match.id} match={match} onRefresh={fetchMatches} />
-            ))
-          )}
-        </div>
+        {/* Matches / Stats Grid */}
+        {!showSavedStatsOnly ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {loading ? (
+              <div className="col-span-full py-20 text-center text-text-muted font-bold italic animate-pulse">Sincronizando partidas...</div>
+            ) : matches.length === 0 ? (
+              <div className="col-span-full py-20 text-center rounded-3xl border-2 border-dashed border-surface bg-surface/5">
+                <TrophyIcon className="mx-auto h-16 w-16 text-surface mb-6 opacity-20 fill-current" />
+                <p className="text-text-muted font-black uppercase tracking-widest italic">
+                   Nenhuma partida registrada
+                </p>
+              </div>
+            ) : (
+              matches.map((match) => (
+                <MatchCard key={match.id} match={match} onRefresh={fetchMatches} />
+              ))
+            )}
+          </div>
+        ) : (
+          <div className="bg-surface border border-text/10 rounded-3xl overflow-hidden shadow-xl">
+             <div className="overflow-x-auto">
+               <table className="w-full text-left border-collapse">
+                 <thead>
+                    <tr className="bg-text/5 border-b border-text/10 text-text-muted text-[10px] font-black uppercase tracking-widest">
+                       <th className="px-6 py-4">Torneio</th>
+                       <th className="px-6 py-4">Data</th>
+                       <th className="px-6 py-4">Duração</th>
+                       <th className="px-6 py-4">Placar</th>
+                       <th className="px-6 py-4">Métrica Salva</th>
+                       <th className="px-6 py-4">Contexto</th>
+                       <th className="px-6 py-4 text-right">Ação</th>
+                    </tr>
+                 </thead>
+                 <tbody className="divide-y divide-text/5 text-sm font-semibold">
+                    {matches.flatMap(m => (m.settings?.saved_stats || []).map((s: any) => ({ match: m, stat: s }))).length === 0 ? (
+                       <tr>
+                          <td colSpan={7} className="px-6 py-12 text-center text-text-muted italic font-bold">Nenhuma estatística salva encontrada.</td>
+                       </tr>
+                    ) : (
+                       matches.flatMap(m => (m.settings?.saved_stats || []).map((s: any) => ({ match: m, stat: s }))).map(({match, stat}: any, idx) => {
+                          const date = new Date(match.created_at).toLocaleDateString()
+                          
+                          // Format elapsed time
+                          const elapsed = match.elapsed || 0
+                          const mins = Math.floor(elapsed / 60)
+                          const secs = elapsed % 60
+                          const timeStr = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+
+                          return (
+                            <tr key={`${match.id}-${stat.id}-${idx}`} className="hover:bg-text/5 transition-colors group cursor-pointer" onClick={() => setSelectedStat({ match, stat })}>
+                               <td className="px-6 py-4 font-black italic uppercase text-primary truncate max-w-[150px]">{match.settings?.tournamentName || 'Partida Sem Nome'}</td>
+                               <td className="px-6 py-4 text-text-muted">{date}</td>
+                               <td className="px-6 py-4 font-mono">{timeStr}</td>
+                               <td className="px-6 py-4 font-black">
+                                  <span className="text-primary">{match.score?.games?.a ?? match.score?.teamA?.games ?? 0}</span>
+                                  <span className="mx-1 text-text-muted opacity-50">x</span>
+                                  <span className="text-accent">{match.score?.games?.b ?? match.score?.teamB?.games ?? 0}</span>
+                               </td>
+                               <td className="px-6 py-4 font-black text-text uppercase">{stat.label}</td>
+                               <td className="px-6 py-4 text-text-muted uppercase text-xs truncate max-w-[200px]">{stat.context}</td>
+                               <td className="px-6 py-4 text-right">
+                                  <button onClick={(e) => { e.stopPropagation(); setSelectedStat({ match, stat }); }} className="text-[10px] bg-primary/10 text-primary px-3 py-1.5 rounded-lg font-black uppercase hover:bg-primary/20 transition-all">Ver</button>
+                               </td>
+                            </tr>
+                          )
+                       })
+                    )}
+                 </tbody>
+               </table>
+             </div>
+          </div>
+        )}
       </main>
+
+      {/* Selected Stat Modal */}
+      {selectedStat && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
+           <div className="bg-surface w-full max-w-lg rounded-[2rem] border border-text/10 shadow-2xl p-8 animate-in zoom-in-95 duration-300">
+              <div className="flex justify-between items-center mb-6">
+                 <h2 className="text-2xl font-black italic uppercase text-text">Estatística Salva</h2>
+                 <button onClick={() => setSelectedStat(null)} className="w-8 h-8 flex items-center justify-center rounded-full bg-text/5 hover:bg-text/10 text-text transition-colors">✕</button>
+              </div>
+              
+              <div className="space-y-4">
+                 <div className="bg-text/5 p-4 rounded-xl">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">Torneio / Partida</p>
+                    <p className="font-bold text-lg text-primary">{selectedStat.match.settings?.tournamentName || 'Partida Sem Nome'}</p>
+                 </div>
+                 
+                 <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-text/5 p-4 rounded-xl">
+                       <p className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">Métrica</p>
+                       <p className="font-black text-xl text-text">{selectedStat.stat.label}</p>
+                    </div>
+                    <div className="bg-text/5 p-4 rounded-xl">
+                       <p className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">Data Salva</p>
+                       <p className="font-bold text-text">{new Date(selectedStat.stat.timestamp).toLocaleString()}</p>
+                    </div>
+                 </div>
+
+                 <div className="bg-text/5 p-4 rounded-xl border border-primary/20">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-2">Contexto e Valor</p>
+                    <div className="flex justify-between items-end">
+                       <p className="font-black italic uppercase text-text max-w-[60%]">{selectedStat.stat.context}</p>
+                       <p className="text-4xl font-black text-primary">{selectedStat.stat.value}</p>
+                    </div>
+                 </div>
+              </div>
+
+              <div className="mt-8 flex justify-end">
+                 <button onClick={() => setSelectedStat(null)} className="px-6 py-3 bg-text/10 hover:bg-text/20 rounded-xl font-black uppercase text-sm transition-colors">Fechar</button>
+              </div>
+           </div>
+        </div>
+      )}
     </div>
   )
 }

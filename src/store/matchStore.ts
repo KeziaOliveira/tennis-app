@@ -19,6 +19,17 @@ export interface MatchSettings {
     teamB: string[]
   }
   activeMessage?: string | null
+  activeStatPanel?: {
+    type: 'individual' | 'doubles'
+    statLabel: string
+    player?: string
+    teamAValue?: string
+    teamBValue?: string
+    value?: string
+  } | null
+  showFullStats?: boolean
+  fullStatsData?: { label: string, valA: string, valB: string }[]
+  isStatsSaved?: boolean
 }
 
 export interface TimerState {
@@ -43,6 +54,10 @@ interface MatchState {
   toggleTimer: () => Promise<void>
   finishMatch: () => Promise<void>
   setActiveMessage: (msg: string | null) => Promise<void>
+  setActiveStatPanel: (stat: any) => Promise<void>
+  setShowFullStats: (show: boolean) => Promise<void>
+  saveStats: () => Promise<void>
+  updateSettings: (settingsUpdate: Partial<MatchSettings>) => Promise<void>
   syncWithSupabase: (data: any) => void
 }
 
@@ -67,6 +82,8 @@ const INITIAL_TIMER: TimerState = {
   elapsed: 0,
   isRunning: false
 }
+
+let messageTimeout: NodeJS.Timeout | null = null;
 
 export const useMatchStore = create<MatchState>((set, get) => ({
   matchId: null,
@@ -110,6 +127,88 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     if (!state.matchId) return
 
     const newSettings = { ...state.settings, activeMessage: msg }
+    set({ settings: newSettings })
+
+    await supabase
+      .from('matches')
+      .update({ settings: newSettings as any })
+      .eq('id', state.matchId)
+
+    // Handle auto-hide
+    if (messageTimeout) {
+      clearTimeout(messageTimeout);
+      messageTimeout = null;
+    }
+    
+    if (msg) {
+      // Log the message history in points table
+      await supabase.from('points').insert({
+        match_id: state.matchId,
+        type: 'message',
+        metadata: { text: msg }
+      } as any)
+
+      messageTimeout = setTimeout(() => {
+        get().setActiveMessage(null);
+      }, 7000); // Auto hide after 7 seconds
+    }
+  },
+
+  setActiveStatPanel: async (stat) => {
+    const state = get()
+    if (!state.matchId) return
+
+    const newSettings = { ...state.settings, activeStatPanel: stat, activeMessage: null }
+    set({ settings: newSettings })
+
+    await supabase
+      .from('matches')
+      .update({ settings: newSettings as any })
+      .eq('id', state.matchId)
+
+    if (messageTimeout) {
+      clearTimeout(messageTimeout);
+      messageTimeout = null;
+    }
+    
+    if (stat) {
+      messageTimeout = setTimeout(() => {
+        get().setActiveStatPanel(null);
+      }, 10000); // Auto hide after 10 seconds for stats
+    }
+  },
+
+  setShowFullStats: async (show) => {
+    const state = get()
+    if (!state.matchId) return
+
+    const newSettings = { ...state.settings, showFullStats: show }
+    set({ settings: newSettings })
+
+    await supabase
+      .from('matches')
+      .update({ settings: newSettings as any })
+      .eq('id', state.matchId)
+  },
+
+  saveStats: async () => {
+    const state = get()
+    if (!state.matchId) return
+
+    const newSettings = { ...state.settings, isStatsSaved: true }
+    set({ settings: newSettings })
+
+    await supabase
+      .from('matches')
+      .update({ settings: newSettings as any })
+      .eq('id', state.matchId)
+  },
+
+  updateSettings: async (settingsUpdate) => {
+    const state = get()
+    if (!state.matchId) return
+
+    const newSettings = { ...state.settings, ...settingsUpdate }
     set({ settings: newSettings })
 
     await supabase

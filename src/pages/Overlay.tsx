@@ -111,71 +111,139 @@ const Overlay = () => {
   const players = match.settings?.players || { teamA: ['Time A'], teamB: ['Time B'] }
 
   return (
-    <div className={`min-h-screen flex flex-col gap-2 p-8 ${getBgClass()} transition-colors duration-500`}>
-      {/* Timer Bar */}
-      {match.settings?.timerEnabled && (
-        <div className="flex items-center gap-2 bg-slate-900/95 backdrop-blur-md px-4 py-2 rounded-t-xl border border-white/10 border-b-0 w-max self-start shadow-2xl">
-          <Timer className={`w-3.5 h-3.5 text-primary ${match.is_running ? 'animate-pulse' : ''}`} />
-          <span className="text-sm font-black font-mono tracking-tighter text-white">
-            {formatTime(elapsedSeconds)}
-          </span>
-          <span className="ml-2 px-2 py-0.5 rounded bg-primary/20 text-[10px] font-black text-primary uppercase tracking-widest">Live</span>
-        </div>
-      )}
+    <div className={`min-h-screen ${getBgClass()} p-8 flex items-start justify-start`}>
+      <div className="flex flex-col">
+        
+        {/* Timer - only visible if showFullStats is NOT true */}
+        {!match?.settings?.showFullStats && (
+          <div className="bg-[#FFF100] px-3 py-1 flex items-center gap-2 w-max mb-1 border-b-2 border-r-2 border-[#0B3B60]">
+            <Timer className="w-5 h-5 text-black" />
+            <span className="text-black font-black text-xl tracking-tighter">
+              {Math.floor(elapsedSeconds / 60).toString().padStart(2, '0')}:
+              {(elapsedSeconds % 60).toString().padStart(2, '0')}
+            </span>
+          </div>
+        )}
 
-      <div className="flex flex-col gap-1.5">
-        {/* Team A Row */}
-        <div className="flex items-center bg-slate-900/95 backdrop-blur-md rounded-lg overflow-hidden border border-white/10 shadow-2xl h-18 w-[450px]">
-          <div className="w-2.5 h-full bg-primary shadow-[0_0_15px_rgba(var(--primary-rgb),0.5)]" />
-          <div className="flex-1 px-5 flex flex-col justify-center">
-            <span className="text-[10px] font-black text-primary/60 uppercase tracking-widest leading-none mb-1">Equipe A</span>
-            <div className="font-black italic uppercase text-xl tracking-tighter text-white truncate">
-              {players.teamA.join(' / ')}
-            </div>
-          </div>
-          <div className="flex h-full">
-            <div className="flex flex-col items-center justify-center w-14 bg-white/5 border-l border-white/10">
-                <span className="text-[10px] font-black opacity-40 text-white">SET</span>
-                <span className="font-black text-xl text-primary">{score.sets.filter((s:any) => s.a > s.b).length}</span>
-            </div>
-            <div className="flex flex-col items-center justify-center w-14 bg-white/5 border-l border-white/10">
-                <span className="text-[10px] font-black opacity-40 text-white">GM</span>
-                <span className="font-black text-xl text-primary">{score.games.a}</span>
-            </div>
-            <div className="flex items-center justify-center w-24 bg-primary/20 border-l border-primary/30">
-                <span className="text-4xl font-black italic text-primary drop-shadow-[0_0_8px_rgba(var(--primary-rgb),0.4)]">{score.points.a}</span>
-            </div>
-          </div>
-        </div>
+        {match?.settings?.showFullStats ? (
+           /* Full Match Summary Scoreboard (End of Match) */
+           <div className="flex flex-col bg-[#0B3B60] border-2 border-white w-[600px] shadow-2xl">
+             <div className="bg-white px-4 py-2 text-center">
+               <h2 className="text-[#0B3B60] font-black uppercase text-xl">Estatísticas Finais da Partida</h2>
+             </div>
+             <div className="flex flex-col bg-[#0B3B60]">
+               {match.settings?.fullStatsData?.map((stat: any, i: number) => (
+                 <div key={stat.label} className={`flex text-center py-2 ${i % 2 === 0 ? 'bg-black/10' : ''}`}>
+                    <div className="w-1/4 font-black text-lg text-white">{stat.valA}</div>
+                    <div className="w-2/4 font-black text-sm uppercase tracking-widest text-white/90">{stat.label}</div>
+                    <div className="w-1/4 font-black text-lg text-white">{stat.valB}</div>
+                 </div>
+               ))}
+             </div>
+             <div className="bg-[#FFF100] px-4 py-2 text-center">
+                <span className="text-black font-black uppercase tracking-widest">{match.settings?.tournamentName || 'TORNEIO'}</span>
+             </div>
+           </div>
+        ) : (
+          /* Normal or Doubles Scoreboard Container */
+          <div className="flex flex-col w-[600px] shadow-2xl">
+             
+             {/* TEAM A ROW */}
+             <div className="flex items-stretch justify-between bg-[#0B3B60] border-2 border-white border-b-0 h-[64px]">
+               <div className="flex flex-1 items-center">
+                 {/* Colors */}
+                 <div className="flex flex-col gap-1 px-2 h-full justify-center">
+                   <div className="w-6 h-5 bg-[#00B050]" />
+                   <div className="w-6 h-5 bg-[#FF7C2A]" />
+                 </div>
+                 {/* Names */}
+                 <div className="flex flex-col justify-center px-2 py-1 leading-none">
+                   <span className="text-white font-black text-xl uppercase tracking-tighter font-sans">{players.teamA[0]}</span>
+                   {players.teamA[1] && <span className="text-white font-black text-xl uppercase tracking-tighter font-sans mt-0.5">{players.teamA[1]}</span>}
+                 </div>
+               </div>
 
-        {/* Team B Row */}
-        <div className="flex items-center bg-slate-900/95 backdrop-blur-md rounded-lg overflow-hidden border border-white/10 shadow-2xl h-18 w-[450px]">
-          <div className="w-2.5 h-full bg-accent shadow-[0_0_15px_rgba(var(--accent-rgb),0.5)]" />
-          <div className="flex-1 px-5 flex flex-col justify-center">
-            <span className="text-[10px] font-black text-accent/60 uppercase tracking-widest leading-none mb-1">Equipe B</span>
-            <div className="font-black italic uppercase text-xl tracking-tighter text-white truncate">
-              {players.teamB.join(' / ')}
-            </div>
-          </div>
-          <div className="flex h-full">
-            <div className="flex flex-col items-center justify-center w-14 bg-white/5 border-l border-white/10">
-                <span className="text-[10px] font-black opacity-40 text-white">SET</span>
-                <span className="font-black text-xl text-accent">{score.sets.filter((s:any) => s.b > s.a).length}</span>
-            </div>
-            <div className="flex flex-col items-center justify-center w-14 bg-white/5 border-l border-white/10">
-                <span className="text-[10px] font-black opacity-40 text-white">GM</span>
-                <span className="font-black text-xl text-accent">{score.games.b}</span>
-            </div>
-            <div className="flex items-center justify-center w-24 bg-accent/20 border-l border-accent/30">
-                <span className="text-4xl font-black italic text-accent drop-shadow-[0_0_8px_rgba(var(--accent-rgb),0.4)]">{score.points.b}</span>
-            </div>
-          </div>
-        </div>
+               {/* Right Side Stats / Points */}
+               <div className="flex items-center pr-1 gap-1">
+                 {match?.settings?.activeStatPanel?.type === 'doubles' ? (
+                   <div className="h-[56px] min-w-[200px] flex items-center justify-center bg-white rounded-sm px-4">
+                     <span className="text-[#0B3B60] font-black text-[28px] tracking-tighter">{match.settings.activeStatPanel.teamAValue}</span>
+                   </div>
+                 ) : (
+                   <>
+                     {/* Serving Indicator */}
+                     <div className="px-2">
+                       <div className="w-6 h-6 rounded-full bg-white flex items-center justify-center">
+                         <div className="w-4 h-4 border-2 border-[#0B3B60] rounded-full opacity-50" />
+                       </div>
+                     </div>
+                     <div className="h-[56px] w-[56px] flex items-center justify-center bg-[#FFF100] rounded-sm">
+                       <span className="text-black font-black text-4xl">{score.points.a}</span>
+                     </div>
+                     <div className="h-[56px] w-[48px] flex items-center justify-center bg-[#0B3B60] border-2 border-white rounded-sm">
+                       <span className="text-white font-black text-4xl">{score.games.a}</span>
+                     </div>
+                     <div className="h-[56px] w-[48px] flex items-center justify-center bg-white rounded-sm">
+                       <span className="text-[#0B3B60] font-black text-4xl">{score.sets.filter((s:any) => s.a > s.b).length}</span>
+                     </div>
+                   </>
+                 )}
+               </div>
+             </div>
 
-        {/* Active Message Banner */}
-        {match.settings?.activeMessage && (
-          <div className="bg-[#FFEA00] text-black font-black uppercase italic tracking-tighter text-xl py-2 px-4 text-center rounded-b-lg shadow-2xl animate-in fade-in slide-in-from-top-2 w-[450px]">
-            {match.settings.activeMessage}
+             {/* TEAM B ROW */}
+             <div className="flex items-stretch justify-between bg-[#0B3B60] border-2 border-white h-[64px]">
+               <div className="flex flex-1 items-center">
+                 {/* Colors */}
+                 <div className="flex flex-col gap-1 px-2 h-full justify-center">
+                   <div className="w-6 h-5 bg-[#00B0F0]" />
+                   <div className="w-6 h-5 bg-[#7030A0]" />
+                 </div>
+                 {/* Names */}
+                 <div className="flex flex-col justify-center px-2 py-1 leading-none">
+                   <span className="text-white font-black text-xl uppercase tracking-tighter font-sans">{players.teamB[0]}</span>
+                   {players.teamB[1] && <span className="text-white font-black text-xl uppercase tracking-tighter font-sans mt-0.5">{players.teamB[1]}</span>}
+                 </div>
+               </div>
+
+               {/* Right Side Stats / Points */}
+               <div className="flex items-center pr-1 gap-1">
+                 {match?.settings?.activeStatPanel?.type === 'doubles' ? (
+                   <div className="h-[56px] min-w-[200px] flex items-center justify-center bg-white rounded-sm px-4">
+                     <span className="text-[#0B3B60] font-black text-[28px] tracking-tighter">{match.settings.activeStatPanel.teamBValue}</span>
+                   </div>
+                 ) : (
+                   <>
+                     <div className="px-2 w-10"></div> {/* Empty space for serve indicator */}
+                     <div className="h-[56px] w-[56px] flex items-center justify-center bg-[#FFF100] rounded-sm">
+                       <span className="text-black font-black text-4xl">{score.points.b}</span>
+                     </div>
+                     <div className="h-[56px] w-[48px] flex items-center justify-center bg-[#0B3B60] border-2 border-white rounded-sm">
+                       <span className="text-white font-black text-4xl">{score.games.b}</span>
+                     </div>
+                     <div className="h-[56px] w-[48px] flex items-center justify-center bg-white rounded-sm">
+                       <span className="text-[#0B3B60] font-black text-4xl">{score.sets.filter((s:any) => s.b > s.a).length}</span>
+                     </div>
+                   </>
+                 )}
+               </div>
+             </div>
+
+             {/* Yellow Banner (Messages, Individual Stats, or Doubles Stat Name) */}
+             {(match?.settings?.activeStatPanel?.type === 'doubles' || match?.settings?.activeStatPanel?.type === 'individual' || !!match?.settings?.activeMessage) && (
+               <div className="bg-[#FFF100] px-4 py-1.5 w-full flex items-center justify-between border-2 border-t-0 border-white">
+                 <span className="text-black font-black uppercase text-2xl tracking-tighter font-sans">
+                   {match?.settings?.activeStatPanel?.type === 'doubles' && match.settings.activeStatPanel.statLabel}
+                   {match?.settings?.activeStatPanel?.type === 'individual' && `${match.settings.activeStatPanel.statLabel} - ${match.settings.activeStatPanel.player}`}
+                   {!!match?.settings?.activeMessage && match.settings.activeMessage}
+                 </span>
+                 {match?.settings?.activeStatPanel?.type === 'individual' && (
+                   <span className="text-black font-black uppercase text-2xl tracking-tighter font-sans">
+                     {match.settings.activeStatPanel.value}
+                   </span>
+                 )}
+               </div>
+             )}
           </div>
         )}
       </div>

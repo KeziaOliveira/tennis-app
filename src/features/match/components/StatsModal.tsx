@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../../../services/supabase/client'
-import { X, User, MessageSquare, BarChart3, Trash2 } from 'lucide-react'
+import { X, User, MessageSquare, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useMatchStore, type MatchSettings } from '../../../store/matchStore'
 
@@ -41,6 +41,18 @@ const RETURNING_ACTIONS = [
   'NONE',
 ]
 
+const ATLETA_STATS = [
+  'ACE', 'ACELERADA', 'BREAK POINT', 'CURTA ERRADA', 'CURTA VENCEDORA',
+  'ERRO DE SAQUE', 'ERROS DE DEVOLUÇÃO', 'ERROS NÃO FORÇADOS', 'IGUAIS (40 X 40)',
+  'LOB ERRADO', 'LOB VENCEDOR', 'PONTOS MARCADOS', 'SAQUES CONFIRMADOS',
+  'WINNER', 'WINNER DE DEVOLUÇÃO'
+]
+
+const DUPLA_STATS = [
+  'ACE', 'BREAK POINT', 'ERROS NÃO FORÇADOS', 'PONTOS MARCADOS', 'WINNER',
+  'ERROS DE SAQUE', 'ERROS DE DEVOLUÇÃO'
+]
+
 export default function StatsModal({ matchId, isOpen, onClose, settings, currentSet }: StatsModalProps) {
   const [loading, setLoading] = useState(false)
 
@@ -48,14 +60,13 @@ export default function StatsModal({ matchId, isOpen, onClose, settings, current
   const [servingAction, setServingAction] = useState<string | null>(null)
   const [returningPlayer, setReturningPlayer] = useState<string | null>(null)
   const [returningAction, setReturningAction] = useState<string>('NONE')
-  const [activeTab, setActiveTab] = useState<'stats' | 'messages'>('stats')
+  const [activeTab, setActiveTab] = useState<'registrar' | 'mensagens'>('registrar')
   const [selectedMessage, setSelectedMessage] = useState<string | null>(null)
   
   const { setActiveMessage } = useMatchStore()
 
   if (!isOpen) return null
 
-  // Build flat player list with team label
   const isDoubles = settings?.type === 'doubles' || !settings?.type
 
   const defaultTeamA = isDoubles ? ['Atleta 1 - Dupla 1', 'Atleta 2 - Dupla 1'] : ['Atleta 1 - Dupla 1']
@@ -101,7 +112,6 @@ export default function StatsModal({ matchId, isOpen, onClose, settings, current
       toast.error('Erro ao salvar estatística')
     } else {
       toast.success('Ação registrada!')
-      // Reset state for next entry
       setServingPlayer(null)
       setServingAction(null)
       setReturningPlayer(null)
@@ -161,11 +171,11 @@ export default function StatsModal({ matchId, isOpen, onClose, settings, current
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-background/80 backdrop-blur-sm p-0 md:p-4">
-      <div className="bg-surface w-full max-w-4xl rounded-t-[2.5rem] md:rounded-[2.5rem] shadow-2xl border border-white/5 animate-in slide-in-from-bottom duration-300 overflow-hidden">
+      <div className="bg-surface w-full max-w-4xl rounded-t-[2.5rem] md:rounded-[2.5rem] shadow-2xl border border-white/5 animate-in slide-in-from-bottom duration-300 overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex justify-between items-center px-8 pt-8 pb-4">
+        <div className="flex justify-between items-center px-8 pt-8 pb-4 shrink-0">
           <div>
-            <h2 className="text-xl font-black italic uppercase tracking-tighter">Painel de Controle</h2>
+            <h2 className="text-xl font-black italic uppercase tracking-tighter">Painel de Estatística do Jogo</h2>
             <p className="text-[11px] text-text-muted mt-0.5">
               {settings?.tournamentName || 'Partida'}
             </p>
@@ -179,22 +189,21 @@ export default function StatsModal({ matchId, isOpen, onClose, settings, current
         </div>
 
         {/* Tabs */}
-        <div className="flex px-8 gap-4 border-b border-white/5 pb-4">
+        <div className="flex px-8 gap-4 border-b border-white/5 pb-4 shrink-0 overflow-x-auto">
           <button
-            onClick={() => setActiveTab('stats')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-black uppercase tracking-widest transition-all ${
-              activeTab === 'stats'
-                ? 'bg-primary/20 text-primary border border-primary/30'
+            onClick={() => setActiveTab('registrar')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+              activeTab === 'registrar'
+                ? 'bg-white/10 text-white border border-white/30'
                 : 'text-text-muted hover:bg-white/5'
             }`}
           >
-            <BarChart3 className="w-4 h-4" />
-            Estatísticas
+            Registrar Ponto
           </button>
           <button
-            onClick={() => setActiveTab('messages')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-black uppercase tracking-widest transition-all ${
-              activeTab === 'messages'
+            onClick={() => setActiveTab('mensagens')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+              activeTab === 'mensagens'
                 ? 'bg-[#FFEA00]/20 text-[#FFEA00] border border-[#FFEA00]/30'
                 : 'text-text-muted hover:bg-white/5'
             }`}
@@ -204,88 +213,62 @@ export default function StatsModal({ matchId, isOpen, onClose, settings, current
           </button>
         </div>
 
-        <div className="px-8 pb-6 space-y-4 pt-4 max-h-[75vh] overflow-y-auto">
-          {activeTab === 'stats' && (
+        <div className="px-8 pb-6 space-y-4 pt-4 overflow-y-auto flex-1">
+          {activeTab === 'registrar' && (
             <>
-              {/* ── SECTION 1: SERVING PLAYER ── */}
-          <div className="space-y-2">
-            <p className="text-xs text-center font-black uppercase tracking-[0.2em] text-primary">
-              Atleta no saque:
-            </p>
+              <div className="space-y-2">
+                <p className="text-xs text-center font-black uppercase tracking-[0.2em] text-primary">Atleta no saque:</p>
+                <div className={`grid gap-2 ${allPlayers.length === 4 ? 'grid-cols-4' : 'grid-cols-2'}`}>
+                  {allPlayers.map((p) => (
+                    <PlayerPill
+                      key={`serve-${p.team}-${p.index}`}
+                      player={p}
+                      selected={servingPlayer === `${p.name}|${p.team}${p.index}`}
+                      onSelect={() => setServingPlayer(`${p.name}|${p.team}${p.index}`)}
+                      variant="blue"
+                    />
+                  ))}
+                </div>
+                <div className="flex flex-wrap justify-center gap-2 pt-2">
+                  {SERVING_ACTIONS.map((action) => (
+                    <ActionChip key={action} label={action} selected={servingAction === action} onSelect={() => setServingAction(action)} />
+                  ))}
+                </div>
+              </div>
 
-            {/* Player pills */}
-            <div className={`grid gap-2 ${allPlayers.length === 4 ? 'grid-cols-4' : 'grid-cols-2'}`}>
-              {allPlayers.map((p) => (
-                <PlayerPill
-                  key={`serve-${p.team}-${p.index}`}
-                  player={p}
-                  selected={servingPlayer === `${p.name}|${p.team}${p.index}`}
-                  onSelect={() => setServingPlayer(`${p.name}|${p.team}${p.index}`)}
-                  variant="blue"
-                />
-              ))}
-            </div>
+              <div className="h-px bg-white/5" />
 
-            {/* Serving actions */}
-            <div className="flex flex-wrap justify-center gap-2 pt-2">
-              {SERVING_ACTIONS.map((action) => (
-                <ActionChip
-                  key={action}
-                  label={action}
-                  selected={servingAction === action}
-                  onSelect={() => setServingAction(action)}
-                />
-              ))}
-            </div>
-          </div>
+              <div className="space-y-2">
+                <p className="text-xs text-center font-black uppercase tracking-[0.2em] text-accent">Atleta em execução:</p>
+                <div className={`grid gap-2 ${allPlayers.length === 4 ? 'grid-cols-4' : 'grid-cols-2'}`}>
+                  {allPlayers.map((p) => (
+                    <PlayerPill
+                      key={`return-${p.team}-${p.index}`}
+                      player={p}
+                      selected={returningPlayer === `${p.name}|${p.team}${p.index}`}
+                      onSelect={() => setReturningPlayer(`${p.name}|${p.team}${p.index}`)}
+                      variant="orange"
+                    />
+                  ))}
+                </div>
+                <div className="flex flex-wrap justify-center gap-2 pt-2">
+                  {RETURNING_ACTIONS.map((action) => (
+                    <ActionChip key={action} label={action} selected={returningAction === action} onSelect={() => setReturningAction(action)} />
+                  ))}
+                </div>
+              </div>
 
-          {/* Divider */}
-          <div className="h-px bg-white/5" />
-
-          {/* ── SECTION 2: RETURNING PLAYER ── */}
-          <div className="space-y-2">
-            <p className="text-xs text-center font-black uppercase tracking-[0.2em] text-accent">
-              Atleta em execução:
-            </p>
-
-            {/* Player pills */}
-            <div className={`grid gap-2 ${allPlayers.length === 4 ? 'grid-cols-4' : 'grid-cols-2'}`}>
-              {allPlayers.map((p) => (
-                <PlayerPill
-                  key={`return-${p.team}-${p.index}`}
-                  player={p}
-                  selected={returningPlayer === `${p.name}|${p.team}${p.index}`}
-                  onSelect={() => setReturningPlayer(`${p.name}|${p.team}${p.index}`)}
-                  variant="orange"
-                />
-              ))}
-            </div>
-
-            {/* Returning actions */}
-            <div className="flex flex-wrap justify-center gap-2 pt-2">
-              {RETURNING_ACTIONS.map((action) => (
-                <ActionChip
-                  key={action}
-                  label={action}
-                  selected={returningAction === action}
-                  onSelect={() => setReturningAction(action)}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Confirm button */}
-          <button
-            onClick={handleConfirm}
-            disabled={loading}
-            className="w-full bg-primary text-primary-foreground p-3 rounded-xl font-black uppercase italic text-sm shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 mt-2"
-          >
-            {loading ? 'Salvando...' : 'Confirmar'}
-          </button>
+              <button
+                onClick={handleConfirm}
+                disabled={loading}
+                className="w-full bg-primary text-primary-foreground p-3 rounded-xl font-black uppercase italic text-sm shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 mt-2"
+              >
+                {loading ? 'Salvando...' : 'Confirmar Registro'}
+              </button>
             </>
           )}
 
-          {activeTab === 'messages' && (
+          {activeTab === 'mensagens' && (
             <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                 {[
@@ -305,7 +288,7 @@ export default function StatsModal({ matchId, isOpen, onClose, settings, current
                     className={`p-3 rounded-xl border-2 text-xs font-black uppercase tracking-tight transition-all ${
                       selectedMessage === msg
                         ? 'border-[#FFEA00] bg-[#FFEA00]/20 text-[#FFEA00] shadow-[0_0_15px_rgba(255,234,0,0.2)]'
-                        : 'border-white/5 bg-background text-text-muted hover:border-white/20 hover:text-white'
+                        : 'border-surface-foreground/5 bg-background text-text-muted hover:border-surface-foreground/20 hover:text-text'
                     }`}
                   >
                     {msg}
@@ -313,18 +296,41 @@ export default function StatsModal({ matchId, isOpen, onClose, settings, current
                 ))}
               </div>
 
-              <div className="flex gap-4 pt-4">
+              <div className="pt-2">
+                <input
+                  type="text"
+                  placeholder="OU DIGITE UMA MENSAGEM PERSONALIZADA..."
+                  value={
+                    selectedMessage &&
+                    ![
+                      'BREAK POINT', 'NOME DO TORNEIO', 'PONTO DO GAME', 'PONTO DO JOGO',
+                      'SET ENCERRADO', 'SET POINT', 'SUPER TIE-BREAK', 'TIE-BREAK', 'TROCA DE LADO',
+                    ].includes(selectedMessage)
+                      ? selectedMessage
+                      : ''
+                  }
+                  onChange={(e) => setSelectedMessage(e.target.value.toUpperCase())}
+                  className="w-full bg-background border-2 border-surface-foreground/5 rounded-xl p-3 text-sm font-black uppercase tracking-tight text-text placeholder:text-text-muted focus:outline-none focus:border-[#FFEA00] focus:ring-1 focus:ring-[#FFEA00] transition-all"
+                />
+              </div>
+
+              <div className="flex gap-4 pt-2">
                 <button
                   onClick={async () => {
-                    if (!selectedMessage) return toast.error('Selecione uma mensagem')
+                    if (settings?.showFullStats) {
+                       toast.error('Desative o placar final primeiro!')
+                       return
+                    }
+                    if (!selectedMessage) return toast.error('Selecione ou digite uma mensagem')
                     setLoading(true)
                     await setActiveMessage(selectedMessage)
                     setLoading(false)
                     toast.success('Mensagem enviada para a tela!')
-                    onClose() // Close modal after sending
+                    setSelectedMessage(null)
+                    onClose()
                   }}
-                  disabled={loading || !selectedMessage}
-                  className="flex-1 bg-[#FFEA00] text-black p-3 rounded-xl font-black uppercase italic text-sm shadow-lg shadow-[#FFEA00]/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
+                  disabled={loading || !selectedMessage || settings?.showFullStats}
+                  className="flex-1 bg-[#FFEA00] text-black p-3 rounded-xl font-black uppercase italic text-sm shadow-lg shadow-[#FFEA00]/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:grayscale"
                 >
                   {loading ? 'Enviando...' : 'Mostrar na Tela'}
                 </button>
@@ -336,11 +342,10 @@ export default function StatsModal({ matchId, isOpen, onClose, settings, current
                     setSelectedMessage(null)
                     setLoading(false)
                     toast.success('Mensagem removida!')
-                    onClose() // Close modal after clearing
+                    onClose()
                   }}
                   disabled={loading}
                   className="px-6 bg-error/10 text-error border border-error/20 rounded-xl font-black uppercase tracking-widest flex flex-col items-center justify-center hover:bg-error/20 active:scale-95 transition-all"
-                  title="Limpar mensagem atual"
                 >
                   <Trash2 className="w-5 h-5 mb-0.5" />
                   <span className="text-[9px]">Limpar</span>
