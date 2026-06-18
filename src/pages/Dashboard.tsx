@@ -298,7 +298,7 @@ const Dashboard = () => {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <h1 className="text-5xl font-black italic uppercase tracking-tighter leading-none mb-2">Dashboard</h1>
-            <p className="text-base text-text-muted font-medium">Controle central de torneio</p>
+            <p className="text-base text-text-muted font-medium">Controle central de partidas</p>
           </div>
           <div className="flex flex-col sm:flex-row gap-4">
             <button
@@ -317,7 +317,7 @@ const Dashboard = () => {
               className="flex items-center justify-center gap-3 bg-primary text-primary-foreground px-8 py-4 rounded-3xl font-black uppercase italic shadow-2xl shadow-primary/30 hover:scale-[1.02] active:scale-[0.98] transition-all whitespace-nowrap text-lg"
             >
               <Plus className="w-6 h-6" />
-              Novo Torneio
+              Nova Partida
             </button>
           </div>
         </div>

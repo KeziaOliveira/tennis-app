@@ -85,6 +85,8 @@ const Overlay = () => {
 
   const score = match.score || { sets: [], games: { a: 0, b: 0 }, points: { a: 0, b: 0 } }
   const players = match.settings?.players || { teamA: ['Time A'], teamB: ['Time B'] }
+  const countries = match.settings?.players?.countries
+  const flag = (code: string) => code.toUpperCase().split('').map(c => String.fromCodePoint(c.charCodeAt(0) + 127397)).join('')
 
   return (
     <div className="min-h-screen p-8 flex items-start justify-start" style={bgStyle}>
@@ -134,8 +136,14 @@ const Overlay = () => {
                  </div>
                  {/* Names */}
                  <div className="flex flex-col justify-center px-2 py-1 leading-none">
-                   <span className="text-white font-black text-xl uppercase tracking-tighter font-sans">{players.teamA[0]}</span>
-                   {players.teamA[1] && <span className="text-white font-black text-xl uppercase tracking-tighter font-sans mt-0.5">{players.teamA[1]}</span>}
+                   <span className="text-white font-black text-xl uppercase tracking-tighter font-sans">
+                     {countries?.teamA?.[0] && <span className="mr-1">{flag(countries.teamA[0])}</span>}{players.teamA[0]}
+                   </span>
+                   {players.teamA[1] && (
+                     <span className="text-white font-black text-xl uppercase tracking-tighter font-sans mt-0.5">
+                       {countries?.teamA?.[1] && <span className="mr-1">{flag(countries.teamA[1])}</span>}{players.teamA[1]}
+                     </span>
+                   )}
                  </div>
                </div>
 
@@ -177,8 +185,14 @@ const Overlay = () => {
                  </div>
                  {/* Names */}
                  <div className="flex flex-col justify-center px-2 py-1 leading-none">
-                   <span className="text-white font-black text-xl uppercase tracking-tighter font-sans">{players.teamB[0]}</span>
-                   {players.teamB[1] && <span className="text-white font-black text-xl uppercase tracking-tighter font-sans mt-0.5">{players.teamB[1]}</span>}
+                   <span className="text-white font-black text-xl uppercase tracking-tighter font-sans">
+                     {countries?.teamB?.[0] && <span className="mr-1">{flag(countries.teamB[0])}</span>}{players.teamB[0]}
+                   </span>
+                   {players.teamB[1] && (
+                     <span className="text-white font-black text-xl uppercase tracking-tighter font-sans mt-0.5">
+                       {countries?.teamB?.[1] && <span className="mr-1">{flag(countries.teamB[1])}</span>}{players.teamB[1]}
+                     </span>
+                   )}
                  </div>
                </div>
 

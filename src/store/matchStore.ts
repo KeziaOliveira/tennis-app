@@ -9,14 +9,17 @@ export interface MatchScore {
 
 export interface MatchSettings {
   type: 'singles' | 'doubles'
+  tournamentName?: string
   noAd: boolean
   maxGames: number
   tiebreak: boolean
   statsEnabled: boolean
   timerEnabled: boolean
+  saqueEnabled?: boolean
   players?: {
     teamA: string[]
     teamB: string[]
+    countries?: { teamA: string[]; teamB: string[] } | null
   }
   activeMessage?: string | null
   activeStatPanel?: {
@@ -223,30 +226,41 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     if (!state.matchId || state.status === 'finished') return
 
     let newScore = JSON.parse(JSON.stringify(state.score))
-    
-    // Ensure structure exists
     if (!newScore.points) newScore.points = { a: 0, b: 0 }
     if (!newScore.games) newScore.games = { a: 0, b: 0 }
     if (!newScore.sets) newScore.sets = []
 
-    const teamKey = team
+    const noAd = state.settings?.noAd ?? true
+    const maxGames = state.settings?.maxGames || 6
+    const opp = team === 'a' ? 'b' : 'a'
+    const p = newScore.points[team]
+    const oppP = newScore.points[opp]
 
-    // Simple Tennis logic for Beach Tennis (No Ad)
-    // Points: 0 -> 15 -> 30 -> 40 -> Game
-    const p = newScore.points[teamKey]
-    if (p === 0) newScore.points[teamKey] = 15
-    else if (p === 15) newScore.points[teamKey] = 30
-    else if (p === 30) newScore.points[teamKey] = 40
-    else {
-      // Game won
+    const winGame = () => {
       newScore.points = { a: 0, b: 0 }
-      newScore.games[teamKey] += 1
-      
-      // Set Check
-      if (newScore.games[teamKey] >= (state.settings?.maxGames || 6)) {
-         newScore.sets.push({ a: newScore.games.a, b: newScore.games.b })
-         newScore.games = { a: 0, b: 0 }
+      newScore.games[team] += 1
+      if (newScore.games[team] >= maxGames) {
+        newScore.sets.push({ a: newScore.games.a, b: newScore.games.b })
+        newScore.games = { a: 0, b: 0 }
       }
+    }
+
+    if (p === 0) newScore.points[team] = 15
+    else if (p === 15) newScore.points[team] = 30
+    else if (p === 30) newScore.points[team] = 40
+    else if (p === 40) {
+      if (noAd || oppP < 40) {
+        winGame()
+      } else if (oppP === 41) {
+        // Opponent had advantage → back to deuce
+        newScore.points[opp] = 40
+      } else {
+        // Both at 40 → this team gets advantage
+        newScore.points[team] = 41
+      }
+    } else {
+      // p === 41 (advantage) → win game
+      winGame()
     }
 
     set({ score: newScore })
@@ -296,22 +310,35 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       points: { a: 0, b: 0 }
     }
 
+    const noAd = state.settings?.noAd ?? true
+    const maxGames = state.settings?.maxGames || 6
+
     if (allPoints) {
-      allPoints.forEach((p: any) => {
-        if (!p.winner) return
-        const t = p.winner as 'a' | 'b'
-        
-        const pt = reconstructedScore.points[t]
-        if (pt === 0) reconstructedScore.points[t] = 15
-        else if (pt === 15) reconstructedScore.points[t] = 30
-        else if (pt === 30) reconstructedScore.points[t] = 40
-        else {
+      allPoints.forEach((pt: any) => {
+        if (!pt.winner) return
+        const t = pt.winner as 'a' | 'b'
+        const opp = t === 'a' ? 'b' : 'a'
+        const p = reconstructedScore.points[t]
+        const oppP = reconstructedScore.points[opp]
+
+        const winGame = () => {
           reconstructedScore.points = { a: 0, b: 0 }
           reconstructedScore.games[t] += 1
-          if (reconstructedScore.games[t] >= (state.settings?.maxGames || 6)) {
+          if (reconstructedScore.games[t] >= maxGames) {
             reconstructedScore.sets.push({ a: reconstructedScore.games.a, b: reconstructedScore.games.b })
             reconstructedScore.games = { a: 0, b: 0 }
           }
+        }
+
+        if (p === 0) reconstructedScore.points[t] = 15
+        else if (p === 15) reconstructedScore.points[t] = 30
+        else if (p === 30) reconstructedScore.points[t] = 40
+        else if (p === 40) {
+          if (noAd || oppP < 40) { winGame() }
+          else if (oppP === 41) { reconstructedScore.points[opp] = 40 }
+          else { reconstructedScore.points[t] = 41 }
+        } else {
+          winGame()
         }
       })
     }

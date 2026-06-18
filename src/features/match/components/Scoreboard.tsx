@@ -135,6 +135,9 @@ const Scoreboard = () => {
   }
 
   const players = settings?.players || { teamA: ['Time A'], teamB: ['Time B'] }
+  const countries = settings?.players?.countries
+  const flag = (code: string) => code.toUpperCase().split('').map(c => String.fromCodePoint(c.charCodeAt(0) + 127397)).join('')
+  const displayPts = (pts: number) => pts === 41 ? 'AD' : (pts ?? 0)
 
   if (loading) return <div className="flex h-screen items-center justify-center font-black animate-pulse uppercase tracking-[0.3em]">Sincronizando...</div>
 
@@ -149,23 +152,25 @@ const Scoreboard = () => {
           <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-1 opacity-50">
             {settings?.tournamentName || 'Arena Central'}
           </span>
-          <div className="flex items-center gap-2">
-            <div
-              onClick={() => status !== 'finished' && toggleTimer()}
-              className={`flex items-center gap-3 px-5 py-2 rounded-2xl cursor-pointer transition-all border shadow-lg ${timer.isRunning ? 'bg-primary/10 border-primary/50 text-primary shadow-primary/10' : 'bg-surface border-text/5 text-text-muted hover:bg-surface/50'}`}
-            >
-              <Timer className={`w-4 h-4 ${timer.isRunning ? 'animate-pulse text-primary' : ''}`} />
-              <span className="text-xl font-black font-mono leading-none tracking-tighter text-text">
-                {formatTime(elapsedSeconds)}
-              </span>
+          {settings?.timerEnabled !== false ? (
+            <div className="flex items-center gap-2">
+              <div
+                onClick={() => status !== 'finished' && toggleTimer()}
+                className={`flex items-center gap-3 px-5 py-2 rounded-2xl cursor-pointer transition-all border shadow-lg ${timer.isRunning ? 'bg-primary/10 border-primary/50 text-primary shadow-primary/10' : 'bg-surface border-text/5 text-text-muted hover:bg-surface/50'}`}
+              >
+                <Timer className={`w-4 h-4 ${timer.isRunning ? 'animate-pulse text-primary' : ''}`} />
+                <span className="text-xl font-black font-mono leading-none tracking-tighter text-text">
+                  {formatTime(elapsedSeconds)}
+                </span>
+              </div>
+              <div
+                onClick={() => setConfirmModal('timer')}
+                className="flex items-center justify-center px-3 py-2 rounded-2xl cursor-pointer transition-all border shadow-lg bg-error/10 border-error/20 text-error hover:bg-error/20 active:scale-90"
+              >
+                <RotateCcw className="w-4 h-4" />
+              </div>
             </div>
-            <div
-              onClick={() => setConfirmModal('timer')}
-              className="flex items-center justify-center px-3 py-2 rounded-2xl cursor-pointer transition-all border shadow-lg bg-error/10 border-error/20 text-error hover:bg-error/20 active:scale-90"
-            >
-              <RotateCcw className="w-4 h-4" />
-            </div>
-          </div>
+          ) : null}
         </div>
         <div className="flex gap-3">
           <button 
@@ -179,7 +184,7 @@ const Scoreboard = () => {
               <MoonIcon className="w-5 h-5 fill-current text-secondary" />
             )}
           </button>
-          <button className="p-3 hover:bg-surface rounded-2xl transition-colors">
+          <button onClick={() => navigate('/settings')} className="p-3 hover:bg-surface rounded-2xl transition-colors">
             <Settings className="w-5 h-5 opacity-40" />
           </button>
         </div>
@@ -201,22 +206,27 @@ const Scoreboard = () => {
             {players.teamA.map((name: string, i: number) => (
               <div key={i} className="flex items-center gap-3">
                 <div className="w-2 h-7 bg-primary rounded-full shadow-[0_0_10px_rgba(var(--primary-rgb),0.5)] shrink-0" />
+                {countries?.teamA?.[i] && (
+                  <span className="text-xl leading-none shrink-0">{flag(countries.teamA[i])}</span>
+                )}
                 <span className="font-black uppercase italic tracking-tighter text-text text-lg md:text-2xl truncate">
                   {name}
                 </span>
               </div>
             ))}
-            <button
-              onClick={(e) => toggleServe('a', e)}
-              className={`mt-1 self-start flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest transition-all border ${
-                servingTeam === 'a'
-                  ? 'bg-primary/15 text-primary border-primary/30 shadow-[0_0_8px_rgba(var(--primary-rgb),0.2)]'
-                  : 'bg-transparent text-text-muted/40 border-text/8 hover:text-text-muted hover:border-text/20'
-              }`}
-            >
-              <span className={`w-2 h-2 rounded-full transition-colors ${servingTeam === 'a' ? 'bg-primary' : 'bg-text-muted/20'}`} />
-              Saque
-            </button>
+            {settings?.saqueEnabled !== false && (
+              <button
+                onClick={(e) => toggleServe('a', e)}
+                className={`mt-1 self-start flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest transition-all border ${
+                  servingTeam === 'a'
+                    ? 'bg-primary/15 text-primary border-primary/30 shadow-[0_0_8px_rgba(var(--primary-rgb),0.2)]'
+                    : 'bg-transparent text-text-muted/40 border-text/8 hover:text-text-muted hover:border-text/20'
+                }`}
+              >
+                <span className={`w-2 h-2 rounded-full transition-colors ${servingTeam === 'a' ? 'bg-primary' : 'bg-text-muted/20'}`} />
+                Saque
+              </button>
+            )}
           </div>
 
           <button
@@ -225,7 +235,7 @@ const Scoreboard = () => {
             className="flex-1 flex flex-col items-center justify-center active:bg-primary/10 transition-colors disabled:opacity-50"
           >
             <span className="text-[6rem] sm:text-[9rem] md:text-[17rem] font-black leading-none tracking-tighter text-primary drop-shadow-[0_20px_50px_rgba(var(--primary-rgb),0.3)]">
-              {score?.points?.a ?? 0}
+              {displayPts(score?.points?.a ?? 0)}
             </span>
           </button>
 
@@ -255,22 +265,27 @@ const Scoreboard = () => {
             {players.teamB.map((name: string, i: number) => (
               <div key={i} className="flex items-center gap-3 flex-row-reverse">
                 <div className="w-2 h-7 bg-accent rounded-full shadow-[0_0_10px_rgba(var(--accent-rgb),0.5)] shrink-0" />
+                {countries?.teamB?.[i] && (
+                  <span className="text-xl leading-none shrink-0">{flag(countries.teamB[i])}</span>
+                )}
                 <span className="font-black uppercase italic tracking-tighter text-text text-lg md:text-2xl truncate">
                   {name}
                 </span>
               </div>
             ))}
-            <button
-              onClick={(e) => toggleServe('b', e)}
-              className={`mt-1 self-end flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest transition-all border ${
-                servingTeam === 'b'
-                  ? 'bg-accent/15 text-accent border-accent/30 shadow-[0_0_8px_rgba(var(--accent-rgb),0.2)]'
-                  : 'bg-transparent text-text-muted/40 border-text/8 hover:text-text-muted hover:border-text/20'
-              }`}
-            >
-              Saque
-              <span className={`w-2 h-2 rounded-full transition-colors ${servingTeam === 'b' ? 'bg-accent' : 'bg-text-muted/20'}`} />
-            </button>
+            {settings?.saqueEnabled !== false && (
+              <button
+                onClick={(e) => toggleServe('b', e)}
+                className={`mt-1 self-end flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest transition-all border ${
+                  servingTeam === 'b'
+                    ? 'bg-accent/15 text-accent border-accent/30 shadow-[0_0_8px_rgba(var(--accent-rgb),0.2)]'
+                    : 'bg-transparent text-text-muted/40 border-text/8 hover:text-text-muted hover:border-text/20'
+                }`}
+              >
+                Saque
+                <span className={`w-2 h-2 rounded-full transition-colors ${servingTeam === 'b' ? 'bg-accent' : 'bg-text-muted/20'}`} />
+              </button>
+            )}
           </div>
 
           <button
@@ -279,7 +294,7 @@ const Scoreboard = () => {
             className="flex-1 flex flex-col items-center justify-center active:bg-accent/10 transition-colors disabled:opacity-50"
           >
             <span className="text-[6rem] sm:text-[9rem] md:text-[17rem] font-black leading-none tracking-tighter text-accent drop-shadow-[0_20px_50px_rgba(var(--accent-rgb),0.3)]">
-              {score?.points?.b ?? 0}
+              {displayPts(score?.points?.b ?? 0)}
             </span>
           </button>
 
@@ -305,7 +320,7 @@ const Scoreboard = () => {
       </main>
 
       {/* Footer Controls */}
-      <footer className="shrink-0 px-4 pt-4 bg-surface grid grid-cols-5 gap-3 border-t border-surface shadow-[0_-20px_60px_rgba(0,0,0,0.3)] relative z-20" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
+      <footer className={`shrink-0 px-4 pt-4 bg-surface grid gap-3 border-t border-surface shadow-[0_-20px_60px_rgba(0,0,0,0.3)] relative z-20 ${settings?.statsEnabled !== false ? 'grid-cols-5' : 'grid-cols-4'}`} style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
          <button
           onClick={copyOverlayLink}
           className="flex flex-col items-center justify-center py-2.5 px-2 rounded-2xl bg-background hover:bg-background/80 border border-text/5 transition-all hover:scale-105 active:scale-95 shadow-lg"
@@ -314,13 +329,15 @@ const Scoreboard = () => {
             <span className="text-[9px] uppercase font-black tracking-widest leading-none text-text">Copiar link</span>
          </button>
 
-         <button
-          onClick={() => setIsStatsOpen(true)}
-          className="flex flex-col items-center justify-center py-2.5 px-2 rounded-2xl bg-background hover:bg-background/80 border border-text/5 transition-all hover:scale-105 active:scale-95 shadow-lg"
-         >
-            <Activity className="w-5 h-5 mb-1 text-success" />
-            <span className="text-[9px] uppercase font-black tracking-widest leading-none text-text">Estatísticas</span>
-         </button>
+         {settings?.statsEnabled !== false && (
+           <button
+             onClick={() => setIsStatsOpen(true)}
+             className="flex flex-col items-center justify-center py-2.5 px-2 rounded-2xl bg-background hover:bg-background/80 border border-text/5 transition-all hover:scale-105 active:scale-95 shadow-lg"
+           >
+             <Activity className="w-5 h-5 mb-1 text-success" />
+             <span className="text-[9px] uppercase font-black tracking-widest leading-none text-text">Estatísticas</span>
+           </button>
+         )}
 
          <button
           onClick={() => navigate(`/match/${matchId}/stats`)}
