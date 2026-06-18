@@ -176,9 +176,23 @@ export default function StatsModal({ matchId, isOpen, onClose, settings, current
         <div className="flex justify-between items-center px-8 pt-8 pb-4 shrink-0">
           <div>
             <h2 className="text-xl font-black italic uppercase tracking-tighter">Painel de Estatística do Jogo</h2>
-            <p className="text-[11px] text-text-muted mt-0.5">
+            <p className="text-[11px] text-text-muted mt-0.5 mb-2">
               {settings?.tournamentName || 'Partida'}
             </p>
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                { label: settings?.type === 'singles' ? 'Simples' : 'Duplas', on: true },
+                { label: `${settings?.maxGames || 6} Games`, on: true },
+                { label: settings?.noAd ? 'No-Ad' : 'Advantage', on: true },
+                { label: 'Tiebreak', on: settings?.tiebreak !== false },
+                { label: 'Timer', on: settings?.timerEnabled !== false },
+                { label: 'Saque', on: settings?.saqueEnabled !== false },
+              ].map(b => (
+                <span key={b.label} className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-lg border ${b.on ? 'text-text-muted border-text/10 bg-text/5' : 'text-text-muted/30 border-text/5'}`}>
+                  {b.label}
+                </span>
+              ))}
+            </div>
           </div>
           <button
             onClick={onClose}

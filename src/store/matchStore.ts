@@ -421,7 +421,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
         games: dbScore.games || { a: 0, b: 0 },
         points: dbScore.points || { a: 0, b: 0 }
       },
-      settings: data.settings || INITIAL_SETTINGS,
+      settings: { ...INITIAL_SETTINGS, ...(data.settings || {}) },
       status: (data.status || 'waiting') as 'waiting' | 'live' | 'finished',
       timer: {
         startedAt: data.started_at,

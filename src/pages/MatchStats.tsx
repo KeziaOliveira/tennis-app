@@ -84,6 +84,8 @@ export default function MatchStats() {
 
   // Data processing
   const isDoubles = match?.settings?.type === 'doubles' || !match?.settings?.type
+  const teamLabelA = isDoubles ? 'Dupla 1' : 'Time A'
+  const teamLabelB = isDoubles ? 'Dupla 2' : 'Time B'
   const defaultTeamA = isDoubles ? ['Atleta 1 - Dupla 1', 'Atleta 2 - Dupla 1'] : ['Atleta 1 - Dupla 1']
   const defaultTeamB = isDoubles ? ['Atleta 1 - Dupla 2', 'Atleta 2 - Dupla 2'] : ['Atleta 1 - Dupla 2']
 
@@ -246,10 +248,10 @@ export default function MatchStats() {
     chartLabelB = currentPlayers[1] || 'Atleta 2'
     chartColorA = selectedTeam === 'A' ? '#0ea5e9' : '#f59e0b'
     chartColorB = selectedTeam === 'A' ? '#38bdf8' : '#fbbf24'
-    chartTitle = selectedTeam === 'A' ? 'Dupla 1 — por Atleta' : 'Dupla 2 — por Atleta'
+    chartTitle = selectedTeam === 'A' ? `${teamLabelA} — por Atleta` : `${teamLabelB} — por Atleta`
   } else {
-    chartLabelA = 'Dupla 1'
-    chartLabelB = 'Dupla 2'
+    chartLabelA = teamLabelA
+    chartLabelB = teamLabelB
     chartColorA = '#0ea5e9'
     chartColorB = '#f59e0b'
     chartTitle = 'Comparação de Duplas'
@@ -575,7 +577,7 @@ export default function MatchStats() {
 
   const handleShowOverlayStat = async (label: string, value: number) => {
     if (!matchId || !match) return
-    const contextName = selectedPlayerName || (selectedTeam ? (selectedTeam === 'A' ? 'Dupla 1' : 'Dupla 2') : 'Geral')
+    const contextName = selectedPlayerName || (selectedTeam ? (selectedTeam === 'A' ? teamLabelA : teamLabelB) : 'Geral')
     
     // Se for time especifico, exibe o painel de duplas
     if (selectedTeam && !selectedPlayer) {
@@ -620,7 +622,7 @@ export default function MatchStats() {
         ...match.settings,
         activeStatPanel: {
           type: 'doubles',
-          statLabel: `${label} - ${selectedTeam === 'A' ? 'Dupla 1' : 'Dupla 2'}`,
+          statLabel: `${label} - ${selectedTeam === 'A' ? teamLabelA : teamLabelB}`,
           teamAValue: val0.toString(),
           teamBValue: val1.toString()
         },
@@ -692,12 +694,31 @@ export default function MatchStats() {
             >
               <Activity className="w-4 h-4" /> Overlay
             </button>
-            <div className="flex items-center gap-2 bg-primary/10 border border-primary/20 px-5 py-2.5 rounded-2xl text-primary shadow-[0_0_15px_rgba(14,165,233,0.1)]">
-              <Clock className="w-4 h-4 animate-pulse" />
-              <span className="font-mono font-black text-xl tracking-tighter">{durationStr}</span>
-            </div>
+            {match?.settings?.timerEnabled !== false && (
+              <div className="flex items-center gap-2 bg-primary/10 border border-primary/20 px-5 py-2.5 rounded-2xl text-primary shadow-[0_0_15px_rgba(14,165,233,0.1)]">
+                <Clock className="w-4 h-4 animate-pulse" />
+                <span className="font-mono font-black text-xl tracking-tighter">{durationStr}</span>
+              </div>
+            )}
           </div>
         </header>
+
+        {/* Match Settings Summary */}
+        <div className="flex flex-wrap gap-2 px-1">
+          {[
+            { label: match?.settings?.type === 'singles' ? 'Simples' : 'Duplas', color: 'text-primary bg-primary/10 border-primary/20' },
+            { label: `${match?.settings?.maxGames || 6} Games`, color: 'text-text-muted bg-text/5 border-text/10' },
+            { label: match?.settings?.noAd ? 'No-Ad' : 'Advantage', color: 'text-text-muted bg-text/5 border-text/10' },
+            match?.settings?.tiebreak !== false && { label: 'Tiebreak', color: 'text-text-muted bg-text/5 border-text/10' },
+            match?.settings?.timerEnabled === false && { label: 'Sem Timer', color: 'text-text-muted/50 bg-text/3 border-text/8' },
+            match?.settings?.saqueEnabled === false && { label: 'Sem Saque', color: 'text-text-muted/50 bg-text/3 border-text/8' },
+            match?.settings?.statsEnabled === false && { label: 'Stats Off', color: 'text-error/60 bg-error/5 border-error/10' },
+          ].filter(Boolean).map((b: any) => (
+            <span key={b.label} className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-xl border ${b.color}`}>
+              {b.label}
+            </span>
+          ))}
+        </div>
 
         {/* Global Filters (Top Bar) */}
         <div className="flex flex-col xl:flex-row gap-4">
@@ -719,7 +740,7 @@ export default function MatchStats() {
                   : 'text-text-muted hover:bg-text/5 border border-transparent'
               }`}
             >
-              <span className="w-2 h-2 rounded-full bg-[#0ea5e9]"></span> Dupla 1
+              <span className="w-2 h-2 rounded-full bg-[#0ea5e9]"></span> {teamLabelA}
             </button>
 
             {selectedTeam === 'A' && !showMessages && teamA.map((name, i) => {
@@ -747,7 +768,7 @@ export default function MatchStats() {
                   : 'text-text-muted hover:bg-text/5 border border-transparent'
               }`}
             >
-              <span className="w-2 h-2 rounded-full bg-[#f59e0b]"></span> Dupla 2
+              <span className="w-2 h-2 rounded-full bg-[#f59e0b]"></span> {teamLabelB}
             </button>
 
             {selectedTeam === 'B' && !showMessages && teamB.map((name, i) => {
@@ -1052,8 +1073,8 @@ export default function MatchStats() {
               )}
               {ctrlMode === 'DUPLA' && (
                 <div className="flex gap-3">
-                  <button onClick={() => toggleSelection(setCtrlSelectedTeams, 'A')} className={`px-6 py-2 rounded-full text-xs font-black transition-all border ${ctrlSelectedTeams.includes('A') ? 'bg-[#0ea5e9] text-white border-[#0ea5e9]' : 'bg-text/5 text-text-muted border-transparent hover:bg-text/10'}`}>Dupla 1</button>
-                  <button onClick={() => toggleSelection(setCtrlSelectedTeams, 'B')} className={`px-6 py-2 rounded-full text-xs font-black transition-all border ${ctrlSelectedTeams.includes('B') ? 'bg-[#f59e0b] text-black border-[#f59e0b]' : 'bg-text/5 text-text-muted border-transparent hover:bg-text/10'}`}>Dupla 2</button>
+                  <button onClick={() => toggleSelection(setCtrlSelectedTeams, 'A')} className={`px-6 py-2 rounded-full text-xs font-black transition-all border ${ctrlSelectedTeams.includes('A') ? 'bg-[#0ea5e9] text-white border-[#0ea5e9]' : 'bg-text/5 text-text-muted border-transparent hover:bg-text/10'}`}>{teamLabelA}</button>
+                  <button onClick={() => toggleSelection(setCtrlSelectedTeams, 'B')} className={`px-6 py-2 rounded-full text-xs font-black transition-all border ${ctrlSelectedTeams.includes('B') ? 'bg-[#f59e0b] text-black border-[#f59e0b]' : 'bg-text/5 text-text-muted border-transparent hover:bg-text/10'}`}>{teamLabelB}</button>
                 </div>
               )}
 
