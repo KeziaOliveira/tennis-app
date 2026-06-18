@@ -194,8 +194,8 @@ export default function StatsModal({ matchId, isOpen, onClose, settings, current
             onClick={() => setActiveTab('registrar')}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-black uppercase tracking-widest transition-all whitespace-nowrap ${
               activeTab === 'registrar'
-                ? 'bg-white/10 text-white border border-white/30'
-                : 'text-text-muted hover:bg-white/5'
+                ? 'bg-text/10 text-text border border-text/20'
+                : 'text-text-muted hover:bg-text/5'
             }`}
           >
             Registrar Ponto
@@ -205,7 +205,7 @@ export default function StatsModal({ matchId, isOpen, onClose, settings, current
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-black uppercase tracking-widest transition-all whitespace-nowrap ${
               activeTab === 'mensagens'
                 ? 'bg-[#FFEA00]/20 text-[#FFEA00] border border-[#FFEA00]/30'
-                : 'text-text-muted hover:bg-white/5'
+                : 'text-text-muted hover:bg-text/5'
             }`}
           >
             <MessageSquare className="w-4 h-4" />

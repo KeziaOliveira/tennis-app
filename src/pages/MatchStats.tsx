@@ -6,6 +6,12 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { toast } from 'sonner'
 import { useMatchStore } from '../store/matchStore'
 
+// Action strings exactly as recorded by StatsModal
+const WINNER_SA = new Set(['ACE', 'WINNER', 'SMASH IN', 'LOB VENCEDOR', 'CURTA VENCEDORA', 'ACELERADA'])
+const WINNER_RA = new Set(['WINNER', 'WINNER DEVOL.', 'SMASH IN', 'LOB VENC.', 'CURTA VENC.', 'ACELERADA'])
+const ERROR_SA  = new Set(['ERRO SAQUE', 'E.N.F.', 'SMASH OUT', 'LOB FORA', 'CURTA ERRADA'])
+const ERROR_RA  = new Set(['ERRO DEVOL.', 'E.N.F.', 'SMASH OUT', 'LOB FORA', 'CURTA ERRADA'])
+
 export default function MatchStats() {
   const { matchId } = useParams()
   const navigate = useNavigate()
@@ -140,10 +146,10 @@ export default function MatchStats() {
     const ra = meta.returning_action || ''
 
     if (sa === 'ACE') totalAces++
-    if (sa.includes('VENC') || sa === 'ACE' || sa === 'SMASH IN') totalWinners++
-    if (ra.includes('VENC') || ra === 'SMASH IN') totalWinners++
-    if (sa.includes('ERRO') || sa.includes('OUT') || sa.includes('ERRADA') || sa.includes('FALTA')) totalErrors++
-    if (ra.includes('ERRO') || ra.includes('OUT') || ra.includes('ERRADA') || ra.includes('FALTA')) totalErrors++
+    if (WINNER_SA.has(sa)) totalWinners++
+    if (WINNER_RA.has(ra)) totalWinners++
+    if (ERROR_SA.has(sa)) totalErrors++
+    if (ERROR_RA.has(ra)) totalErrors++
   })
 
   // --- Comparison Chart Data ---
@@ -312,6 +318,82 @@ export default function MatchStats() {
   }
 
   // --- Overlay Control Actions ---
+
+  // Calculates a stat value for the overlay control panel, applying ctrl-specific filters
+  const calcCtrlStat = (statLabel: string, playerFilter?: string, teamFilter?: 'A' | 'B'): number => {
+    const ctrlFiltered = stats.filter(s => {
+      if (s.type === 'message') return false
+      const meta = s.metadata || {}
+      if (ctrlSelectedSet !== 'JOGO' && meta.set_number !== ctrlSelectedSet) return false
+      if (ctrlSelectedTime) {
+        const diffMin = (new Date(s.created_at).getTime() - matchStartTimestamp) / 60000
+        if (diffMin > parseInt(ctrlSelectedTime)) return false
+      }
+      if (playerFilter) {
+        if (meta.serving_player !== playerFilter && meta.returning_player !== playerFilter) return false
+      } else if (teamFilter) {
+        const sp = meta.serving_player || ''
+        const rp = meta.returning_player || ''
+        if (!sp.includes(`|${teamFilter}`) && !rp.includes(`|${teamFilter}`)) return false
+      }
+      return true
+    })
+
+    const isMe = (p: string) =>
+      playerFilter ? p === playerFilter : teamFilter ? p.includes(`|${teamFilter}`) : true
+
+    let count = 0
+    ctrlFiltered.forEach(s => {
+      const meta = s.metadata || {}
+      const sa = meta.serving_action || ''
+      const ra = meta.returning_action || ''
+      const sp = meta.serving_player || ''
+      const rp = meta.returning_player || ''
+
+      switch (statLabel) {
+        case 'ACE':
+          if (sa === 'ACE' && isMe(sp)) count++; break
+        case 'ACELERADA':
+          if (sa === 'ACELERADA' && isMe(sp)) count++
+          if (ra === 'ACELERADA' && isMe(rp)) count++; break
+        case 'CURTA ERRADA':
+          if (sa === 'CURTA ERRADA' && isMe(sp)) count++
+          if (ra === 'CURTA ERRADA' && isMe(rp)) count++; break
+        case 'CURTA VENCEDORA':
+          if (sa === 'CURTA VENCEDORA' && isMe(sp)) count++
+          if ((ra === 'CURTA VENC.' || ra === 'CURTA VENCEDORA') && isMe(rp)) count++; break
+        case 'ERRO DE SAQUE':
+        case 'ERROS DE SAQUE':
+          if (sa === 'ERRO SAQUE' && isMe(sp)) count++; break
+        case 'ERROS DE DEVOLUÇÃO':
+          if (ra === 'ERRO DEVOL.' && isMe(rp)) count++; break
+        case 'ERROS NÃO FORÇADOS':
+          if (sa === 'E.N.F.' && isMe(sp)) count++
+          if (ra === 'E.N.F.' && isMe(rp)) count++; break
+        case 'LOB ERRADO':
+          if (sa === 'LOB FORA' && isMe(sp)) count++
+          if (ra === 'LOB FORA' && isMe(rp)) count++; break
+        case 'LOB VENCEDOR':
+          if (sa === 'LOB VENCEDOR' && isMe(sp)) count++
+          if ((ra === 'LOB VENC.' || ra === 'LOB VENCEDOR') && isMe(rp)) count++; break
+        case 'SAQUES CONFIRMADOS':
+          if (WINNER_SA.has(sa) && isMe(sp)) count++; break
+        case 'WINNER':
+          if (WINNER_SA.has(sa) && isMe(sp)) count++
+          if (WINNER_RA.has(ra) && isMe(rp)) count++; break
+        case 'WINNER DE DEVOLUÇÃO':
+          if ((ra === 'WINNER DEVOL.' || ra === 'WINNER') && isMe(rp)) count++; break
+        case 'PONTOS MARCADOS':
+          // Server wins: won point or returner made error
+          if ((WINNER_SA.has(sa) || ERROR_RA.has(ra)) && isMe(sp)) count++
+          // Returner wins: won point or server made error
+          if ((WINNER_RA.has(ra) || ERROR_SA.has(sa)) && isMe(rp)) count++; break
+        // BREAK POINT and IGUAIS (40 X 40) are game-state messages, not tracked in stat records → 0
+      }
+    })
+    return count
+  }
+
   const ALL_STATS = [
     'ACE', 'ACELERADA', 'BREAK POINT', 'CURTA ERRADA', 'CURTA VENCEDORA',
     'ERRO DE SAQUE', 'ERROS DE DEVOLUÇÃO', 'ERROS NÃO FORÇADOS', 'IGUAIS (40 X 40)',
@@ -325,65 +407,87 @@ export default function MatchStats() {
 
   const handleShowAction = async () => {
     if (!matchId || !match) return
-    
+
     if (ctrlMode === 'MENSAGENS') {
       if (ctrlSelectedStats.length === 0) return toast.error('Selecione uma mensagem.')
-      await supabase.from('matches').update({ settings: { ...match.settings, activeMessage: ctrlSelectedStats[0], activeStatPanel: null } as any }).eq('id', matchId)
+      await supabase.from('matches').update({
+        settings: { ...match.settings, activeMessage: ctrlSelectedStats[0], activeStatPanel: null } as any
+      }).eq('id', matchId)
       toast.success('Mensagem enviada!')
       return
     }
 
     if (ctrlSelectedStats.length === 0) return toast.error('Selecione pelo menos uma estatística.')
-
     const statLabel = ctrlSelectedStats[0]
-    
-    // Calculate values based on the selected stat, teams, players, and sets
-    // Simplification for the overlay based on what was selected
-    let contextName = 'Geral'
-    let val0 = 0
-    let val1 = 0
-    
-    // For now we will use totalAces, totalWinners, totalErrors as dummy values 
-    // to simulate until we write the full filter logic for every possible stat
-    if (ctrlMode === 'ATLETA' && ctrlSelectedPlayers.length > 0) {
-      contextName = ctrlSelectedPlayers.map(p => p.split('|')[0]).join(', ')
-      val0 = totalAces // Dummy fallback
-      if (statLabel === 'WINNER') val0 = totalWinners
-      if (statLabel === 'ERROS NÃO FORÇADOS') val0 = totalErrors
+
+    let newStatPanel: any
+
+    if (ctrlMode === 'DUPLA') {
+      const showA = !ctrlSelectedTeams.length || ctrlSelectedTeams.includes('A')
+      const showB = !ctrlSelectedTeams.length || ctrlSelectedTeams.includes('B')
+      const valA = showA ? calcCtrlStat(statLabel, undefined, 'A') : 0
+      const valB = showB ? calcCtrlStat(statLabel, undefined, 'B') : 0
+      const label = ctrlSelectedTeams.length === 1
+        ? `${statLabel} – Dupla ${ctrlSelectedTeams[0] === 'A' ? '1' : '2'}`
+        : statLabel
+      newStatPanel = { type: 'doubles', statLabel: label, teamAValue: valA.toString(), teamBValue: valB.toString() }
+    } else {
+      // ATLETA mode
+      if (ctrlSelectedPlayers.length === 0) {
+        const valA = calcCtrlStat(statLabel, undefined, 'A')
+        const valB = calcCtrlStat(statLabel, undefined, 'B')
+        newStatPanel = { type: 'doubles', statLabel, teamAValue: valA.toString(), teamBValue: valB.toString() }
+      } else {
+        const playerName = ctrlSelectedPlayers.map(p => p.split('|')[0]).join(', ')
+        const val = ctrlSelectedPlayers.reduce((sum, pid) => sum + calcCtrlStat(statLabel, pid), 0)
+        newStatPanel = { type: 'individual', statLabel, player: playerName, value: val.toString() }
+      }
     }
 
-    // For DUPLA mode
-    if (ctrlMode === 'DUPLA' || (ctrlMode === 'ATLETA' && ctrlSelectedPlayers.length === 0)) {
-       val0 = totalAces; val1 = totalAces; // Dummy fallback
-       if (statLabel === 'WINNER') { val0 = totalWinners; val1 = totalWinners }
-       
-       await supabase.from('matches').update({ settings: { ...match.settings, activeStatPanel: { type: 'doubles', statLabel, teamAValue: val0.toString(), teamBValue: val1.toString() } } as any }).eq('id', matchId)
-    } else {
-       await supabase.from('matches').update({ settings: { ...match.settings, activeStatPanel: { type: 'individual', statLabel, player: contextName, value: val0.toString() } } as any }).eq('id', matchId)
-    }
-    
+    await supabase.from('matches').update({
+      settings: { ...match.settings, activeStatPanel: newStatPanel } as any
+    }).eq('id', matchId)
+
     toast.success('Estatística enviada!')
-    
+
     setTimeout(async () => {
-       const { data } = await supabase.from('matches').select('settings').eq('id', matchId).single()
-       if (data && data.settings) {
-         const updatedSettings = { ...data.settings, activeStatPanel: null }
-         await supabase.from('matches').update({ settings: updatedSettings as any }).eq('id', matchId)
-       }
+      const { data } = await supabase.from('matches').select('settings').eq('id', matchId).single()
+      if (data?.settings) {
+        await supabase.from('matches').update({ settings: { ...data.settings, activeStatPanel: null } as any }).eq('id', matchId)
+      }
     }, 15000)
   }
 
   const handleSaveStatsAction = async () => {
     if (!matchId || !match) return
     if (ctrlSelectedStats.length === 0) return toast.error('Selecione uma estatística para salvar.')
-    
+
     const saved = match.settings?.saved_stats || []
-    
+    const statLabel = ctrlSelectedStats[0]
+
+    let context: string
+    let valueStr: string
+
+    if (ctrlMode === 'ATLETA' && ctrlSelectedPlayers.length > 0) {
+      context = ctrlSelectedPlayers.map(p => p.split('|')[0]).join(', ')
+      const val = ctrlSelectedPlayers.reduce((sum, pid) => sum + calcCtrlStat(statLabel, pid), 0)
+      valueStr = val.toString()
+    } else if (ctrlMode === 'DUPLA' && ctrlSelectedTeams.length === 1) {
+      context = `Dupla ${ctrlSelectedTeams[0] === 'A' ? '1' : '2'}`
+      valueStr = calcCtrlStat(statLabel, undefined, ctrlSelectedTeams[0] as 'A' | 'B').toString()
+    } else if (ctrlMode === 'DUPLA') {
+      context = 'Ambas as Duplas'
+      valueStr = `${calcCtrlStat(statLabel, undefined, 'A')} / ${calcCtrlStat(statLabel, undefined, 'B')}`
+    } else {
+      context = 'Todos os Atletas'
+      valueStr = `${calcCtrlStat(statLabel, undefined, 'A')} / ${calcCtrlStat(statLabel, undefined, 'B')}`
+    }
+
     const newSave = {
       id: Math.random().toString(36).substring(7),
-      label: ctrlSelectedStats[0],
-      context: ctrlMode === 'ATLETA' ? (ctrlSelectedPlayers.length ? ctrlSelectedPlayers.map(p => p.split('|')[0]).join(', ') : 'Todos os Atletas') : (ctrlMode === 'DUPLA' ? (ctrlSelectedTeams.length ? ctrlSelectedTeams.map(t => 'Dupla ' + (t==='A'?'1':'2')).join(', ') : 'Ambas as Duplas') : 'Geral'),
-      value: '0', // Calculation placeholder
+      label: statLabel,
+      context,
+      value: valueStr,
       timestamp: new Date().toISOString()
     }
 

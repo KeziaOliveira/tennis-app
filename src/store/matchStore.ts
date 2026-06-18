@@ -52,6 +52,7 @@ interface MatchState {
   addPoint: (team: 'a' | 'b') => Promise<void>
   undoLastPoint: () => Promise<void>
   toggleTimer: () => Promise<void>
+  resetTimer: () => Promise<void>
   finishMatch: () => Promise<void>
   setActiveMessage: (msg: string | null) => Promise<void>
   setActiveStatPanel: (stat: any) => Promise<void>
@@ -367,6 +368,22 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     }))
 
     await supabase.from('matches').update(update).eq('id', state.matchId)
+  },
+
+  resetTimer: async () => {
+    const state = get()
+    if (!state.matchId) return
+
+    set((s) => ({
+      timer: { ...s.timer, isRunning: false, elapsed: 0, startedAt: null, pausedAt: null }
+    }))
+
+    await supabase.from('matches').update({
+      is_running: false,
+      elapsed: 0,
+      started_at: null,
+      paused_at: null,
+    }).eq('id', state.matchId)
   },
 
   syncWithSupabase: (data) => {

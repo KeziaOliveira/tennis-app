@@ -4,6 +4,7 @@ import ResetPassword from './pages/ResetPassword'
 import Dashboard from './pages/Dashboard'
 import MatchSetup from './pages/MatchSetup'
 import MatchStats from './pages/MatchStats'
+import Settings from './pages/Settings'
 import Scoreboard from './features/match/components/Scoreboard'
 import Overlay from './pages/Overlay'
 import { useEffect, useState } from 'react'
@@ -64,9 +65,13 @@ function App() {
           path="/match/:matchId/stats" 
           element={session ? <MatchStats /> : <Navigate to="/login" />} 
         />
-        <Route 
-          path="/overlay/:matchId" 
-          element={<Overlay />} 
+        <Route
+          path="/settings"
+          element={session ? <Settings /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/overlay/:matchId"
+          element={<Overlay />}
         />
       </Routes>
     </div>

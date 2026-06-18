@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router'
 import { supabase } from '../../../services/supabase/client'
 import { useMatchStore } from '../../../store/matchStore'
-import { ChevronLeft, Share2, Timer, Settings, Activity } from 'lucide-react'
+import { ChevronLeft, Timer, Settings, Activity, BarChart3, RotateCcw } from 'lucide-react'
 import { useTheme } from '../../../theme/theme-provider'
 import { toast } from 'sonner'
 import StatsModal from './StatsModal'
@@ -25,6 +25,12 @@ const TrophyIcon = (props: React.SVGProps<SVGSVGElement>) => (
   </svg>
 )
 
+const LinkIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" {...props}>
+    <path d="M451.5 160C434.9 160 418.8 164.5 404.7 172.7C388.9 156.7 370.5 143.3 350.2 133.2C378.4 109.2 414.3 96 451.5 96C537.9 96 608 166 608 252.5C608 294 591.5 333.8 562.2 363.1L491.1 434.2C461.8 463.5 422 480 380.5 480C294.1 480 224 410 224 323.5C224 322 224 320.5 224.1 319C224.6 301.3 239.3 287.4 257 287.9C274.7 288.4 288.6 303.1 288.1 320.8C288.1 321.7 288.1 322.6 288.1 323.4C288.1 374.5 329.5 415.9 380.6 415.9C405.1 415.9 428.6 406.2 446 388.8L517.1 317.7C534.4 300.4 544.2 276.8 544.2 252.3C544.2 201.2 502.8 159.8 451.7 159.8zM307.2 237.3C305.3 236.5 303.4 235.4 301.7 234.2C289.1 227.7 274.7 224 259.6 224C235.1 224 211.6 233.7 194.2 251.1L123.1 322.2C105.8 339.5 96 363.1 96 387.6C96 438.7 137.4 480.1 188.5 480.1C205 480.1 221.1 475.7 235.2 467.5C251 483.5 269.4 496.9 289.8 507C261.6 530.9 225.8 544.2 188.5 544.2C102.1 544.2 32 474.2 32 387.7C32 346.2 48.5 306.4 77.8 277.1L148.9 206C178.2 176.7 218 160.2 259.5 160.2C346.1 160.2 416 230.8 416 317.1C416 318.4 416 319.7 416 321C415.6 338.7 400.9 352.6 383.2 352.2C365.5 351.8 351.6 337.1 352 319.4C352 318.6 352 317.9 352 317.1C352 283.4 334 253.8 307.2 237.5z"/>
+  </svg>
+)
+
 const Scoreboard = () => {
   const { matchId } = useParams()
   const navigate = useNavigate()
@@ -40,10 +46,18 @@ const Scoreboard = () => {
     addPoint: addPointAction,
     undoLastPoint,
     finishMatch,
-    toggleTimer 
+    toggleTimer,
+    resetTimer
   } = useMatchStore()
   const [loading, setLoading] = useState(true)
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
+  const [servingTeam, setServingTeam] = useState<'a' | 'b' | null>(null)
+  const [confirmModal, setConfirmModal] = useState<'reset' | 'finish' | 'timer' | null>(null)
+
+  const toggleServe = (team: 'a' | 'b', e: React.MouseEvent) => {
+    e.stopPropagation()
+    setServingTeam(prev => prev === team ? null : team)
+  }
 
   useEffect(() => {
     if (!matchId) return
@@ -105,7 +119,6 @@ const Scoreboard = () => {
   }
 
   const handleFinish = async () => {
-    if (!confirm('Finalizar partida definitivamente?')) return
     await finishMatch()
     toast.success('Partida finalizada!')
     navigate('/')
@@ -116,12 +129,17 @@ const Scoreboard = () => {
     toast.success('Último ponto removido')
   }
 
+  const handleResetTimer = async () => {
+    await resetTimer()
+    toast.success('Timer zerado')
+  }
+
   const players = settings?.players || { teamA: ['Time A'], teamB: ['Time B'] }
 
   if (loading) return <div className="flex h-screen items-center justify-center font-black animate-pulse uppercase tracking-[0.3em]">Sincronizando...</div>
 
   return (
-    <div className="flex flex-col h-screen bg-background overflow-hidden select-none">
+    <div className="flex flex-col bg-background overflow-hidden select-none" style={{ height: '100dvh', minHeight: 0 }}>
       {/* Header */}
       <header className="flex items-center justify-between p-4 border-b border-surface bg-surface/30 backdrop-blur-md sticky top-0 z-20">
         <button onClick={() => navigate('/')} className="p-3 hover:bg-surface rounded-2xl transition-all active:scale-90">
@@ -131,14 +149,22 @@ const Scoreboard = () => {
           <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-1 opacity-50">
             {settings?.tournamentName || 'Arena Central'}
           </span>
-          <div 
-            onClick={() => status !== 'finished' && toggleTimer()}
-            className={`flex items-center gap-3 px-5 py-2 rounded-2xl cursor-pointer transition-all border shadow-lg ${timer.isRunning ? 'bg-primary/10 border-primary/50 text-primary shadow-primary/10' : 'bg-surface border-text/5 text-text-muted hover:bg-surface/50'}`}
-          >
-            <Timer className={`w-4 h-4 ${timer.isRunning ? 'animate-pulse text-primary' : ''}`} />
-            <span className="text-xl font-black font-mono leading-none tracking-tighter text-text">
-              {formatTime(elapsedSeconds)}
-            </span>
+          <div className="flex items-center gap-2">
+            <div
+              onClick={() => status !== 'finished' && toggleTimer()}
+              className={`flex items-center gap-3 px-5 py-2 rounded-2xl cursor-pointer transition-all border shadow-lg ${timer.isRunning ? 'bg-primary/10 border-primary/50 text-primary shadow-primary/10' : 'bg-surface border-text/5 text-text-muted hover:bg-surface/50'}`}
+            >
+              <Timer className={`w-4 h-4 ${timer.isRunning ? 'animate-pulse text-primary' : ''}`} />
+              <span className="text-xl font-black font-mono leading-none tracking-tighter text-text">
+                {formatTime(elapsedSeconds)}
+              </span>
+            </div>
+            <div
+              onClick={() => setConfirmModal('timer')}
+              className="flex items-center justify-center px-3 py-2 rounded-2xl cursor-pointer transition-all border shadow-lg bg-error/10 border-error/20 text-error hover:bg-error/20 active:scale-90"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </div>
           </div>
         </div>
         <div className="flex gap-3">
@@ -160,7 +186,7 @@ const Scoreboard = () => {
       </header>
 
       {/* Main Scoreboard Area */}
-      <main className="flex-1 flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-surface/20 relative">
+      <main className="flex-1 min-h-0 flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-surface/20 relative">
         {/* Active Message Banner */}
         {settings?.activeMessage && (
           <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-8 fade-in duration-300 w-full max-w-xl px-4 pointer-events-none">
@@ -170,86 +196,108 @@ const Scoreboard = () => {
           </div>
         )}
         {/* Team A */}
-        <div className="flex-1 flex flex-col relative overflow-hidden group">
-          <div className="absolute top-6 left-6 flex flex-col gap-2">
+        <div className="flex-1 min-h-0 flex flex-col relative overflow-hidden group">
+          <div className="px-5 pt-4 pb-1 flex flex-col gap-1.5">
             {players.teamA.map((name: string, i: number) => (
               <div key={i} className="flex items-center gap-3">
-                <div className="w-2.5 h-8 bg-primary rounded-full shadow-[0_0_10px_rgba(var(--primary-rgb),0.5)]" />
-                <span className="font-black uppercase italic tracking-tighter text-text truncate max-w-[300px] text-2xl md:text-3xl pr-2">
+                <div className="w-2 h-7 bg-primary rounded-full shadow-[0_0_10px_rgba(var(--primary-rgb),0.5)] shrink-0" />
+                <span className="font-black uppercase italic tracking-tighter text-text text-lg md:text-2xl truncate">
                   {name}
                 </span>
               </div>
             ))}
+            <button
+              onClick={(e) => toggleServe('a', e)}
+              className={`mt-1 self-start flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest transition-all border ${
+                servingTeam === 'a'
+                  ? 'bg-primary/15 text-primary border-primary/30 shadow-[0_0_8px_rgba(var(--primary-rgb),0.2)]'
+                  : 'bg-transparent text-text-muted/40 border-text/8 hover:text-text-muted hover:border-text/20'
+              }`}
+            >
+              <span className={`w-2 h-2 rounded-full transition-colors ${servingTeam === 'a' ? 'bg-primary' : 'bg-text-muted/20'}`} />
+              Saque
+            </button>
           </div>
-          
-          <button 
+
+          <button
             onClick={() => addPointAction('a')}
             disabled={status === 'finished'}
             className="flex-1 flex flex-col items-center justify-center active:bg-primary/10 transition-colors disabled:opacity-50"
           >
-            <span className="text-[12rem] md:text-[22rem] font-black leading-none tracking-tighter text-primary drop-shadow-[0_20px_50px_rgba(var(--primary-rgb),0.3)]">
+            <span className="text-[6rem] sm:text-[9rem] md:text-[17rem] font-black leading-none tracking-tighter text-primary drop-shadow-[0_20px_50px_rgba(var(--primary-rgb),0.3)]">
               {score?.points?.a ?? 0}
             </span>
           </button>
 
-          <div className="p-8 flex justify-between items-end border-t border-surface/10 bg-surface/5">
-             <div className="flex gap-8">
+          <div className="px-6 py-4 md:p-8 flex justify-between items-end border-t border-surface/10 bg-surface/5 shrink-0">
+             <div className="flex gap-6 md:gap-8">
                 <div className="flex flex-col">
                   <span className="text-[10px] text-text-muted uppercase font-black tracking-widest mb-1 opacity-50">Games</span>
-                  <span className="text-6xl font-black leading-none text-text">{score?.games?.a ?? 0}</span>
+                  <span className="text-4xl md:text-6xl font-black leading-none text-text">{score?.games?.a ?? 0}</span>
                 </div>
-                <div className="flex flex-col border-l border-text/5 pl-8">
+                <div className="flex flex-col border-l border-text/5 pl-6 md:pl-8">
                   <span className="text-[10px] text-text-muted uppercase font-black tracking-widest mb-1 opacity-50">Sets</span>
                   <div className="flex gap-2">
                     {(score?.sets ?? []).map((s, i) => (
-                      <span key={i} className={`text-3xl font-black ${s.a > s.b ? 'text-primary' : 'text-text-muted opacity-20'}`}>{s.a}</span>
+                      <span key={i} className={`text-2xl md:text-3xl font-black ${s.a > s.b ? 'text-primary' : 'text-text-muted opacity-20'}`}>{s.a}</span>
                     ))}
-                    {(score?.sets ?? []).length === 0 && <span className="text-3xl font-black text-text-muted opacity-10">0</span>}
+                    {(score?.sets ?? []).length === 0 && <span className="text-2xl md:text-3xl font-black text-text-muted opacity-10">0</span>}
                   </div>
                 </div>
              </div>
-             <TrophyIcon className="w-10 h-10 text-primary/5 fill-current" />
+             <TrophyIcon className="w-8 h-8 md:w-10 md:h-10 text-primary/5 fill-current" />
           </div>
         </div>
 
         {/* Team B */}
-        <div className="flex-1 flex flex-col relative overflow-hidden group bg-surface/5">
-          <div className="absolute top-6 right-6 flex flex-col items-end gap-2 text-right">
+        <div className="flex-1 min-h-0 flex flex-col relative overflow-hidden group bg-surface/5">
+          <div className="px-5 pt-4 pb-1 flex flex-col items-end gap-1.5 text-right">
             {players.teamB.map((name: string, i: number) => (
               <div key={i} className="flex items-center gap-3 flex-row-reverse">
-                <div className="w-2.5 h-8 bg-accent rounded-full shadow-[0_0_10px_rgba(var(--accent-rgb),0.5)]" />
-                <span className="font-black uppercase italic tracking-tighter text-text truncate max-w-[300px] text-2xl md:text-3xl pr-2">
+                <div className="w-2 h-7 bg-accent rounded-full shadow-[0_0_10px_rgba(var(--accent-rgb),0.5)] shrink-0" />
+                <span className="font-black uppercase italic tracking-tighter text-text text-lg md:text-2xl truncate">
                   {name}
                 </span>
               </div>
             ))}
+            <button
+              onClick={(e) => toggleServe('b', e)}
+              className={`mt-1 self-end flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest transition-all border ${
+                servingTeam === 'b'
+                  ? 'bg-accent/15 text-accent border-accent/30 shadow-[0_0_8px_rgba(var(--accent-rgb),0.2)]'
+                  : 'bg-transparent text-text-muted/40 border-text/8 hover:text-text-muted hover:border-text/20'
+              }`}
+            >
+              Saque
+              <span className={`w-2 h-2 rounded-full transition-colors ${servingTeam === 'b' ? 'bg-accent' : 'bg-text-muted/20'}`} />
+            </button>
           </div>
 
-          <button 
+          <button
             onClick={() => addPointAction('b')}
             disabled={status === 'finished'}
             className="flex-1 flex flex-col items-center justify-center active:bg-accent/10 transition-colors disabled:opacity-50"
           >
-            <span className="text-[12rem] md:text-[22rem] font-black leading-none tracking-tighter text-accent drop-shadow-[0_20px_50px_rgba(var(--accent-rgb),0.3)]">
+            <span className="text-[6rem] sm:text-[9rem] md:text-[17rem] font-black leading-none tracking-tighter text-accent drop-shadow-[0_20px_50px_rgba(var(--accent-rgb),0.3)]">
               {score?.points?.b ?? 0}
             </span>
           </button>
 
-          <div className="p-8 flex justify-between items-end border-t border-surface/10 bg-surface/5">
-             <TrophyIcon className="w-10 h-10 text-accent/5 fill-current" />
-             <div className="flex gap-8 text-right">
-                <div className="flex flex-col items-end border-r border-text/5 pr-8">
+          <div className="px-6 py-4 md:p-8 flex justify-between items-end border-t border-surface/10 bg-surface/5 shrink-0">
+             <TrophyIcon className="w-8 h-8 md:w-10 md:h-10 text-accent/5 fill-current" />
+             <div className="flex gap-6 md:gap-8 text-right">
+                <div className="flex flex-col items-end border-r border-text/5 pr-6 md:pr-8">
                   <span className="text-[10px] text-text-muted uppercase font-black tracking-widest mb-1 opacity-50">Sets</span>
                   <div className="flex gap-2">
                     {(score?.sets ?? []).map((s, i) => (
-                      <span key={i} className={`text-3xl font-black ${s.b > s.a ? 'text-accent' : 'text-text-muted opacity-20'}`}>{s.b}</span>
+                      <span key={i} className={`text-2xl md:text-3xl font-black ${s.b > s.a ? 'text-accent' : 'text-text-muted opacity-20'}`}>{s.b}</span>
                     ))}
-                    {(score?.sets ?? []).length === 0 && <span className="text-3xl font-black text-text-muted opacity-10">0</span>}
+                    {(score?.sets ?? []).length === 0 && <span className="text-2xl md:text-3xl font-black text-text-muted opacity-10">0</span>}
                   </div>
                 </div>
                 <div className="flex flex-col items-end">
                   <span className="text-[10px] text-text-muted uppercase font-black tracking-widest mb-1 opacity-50">Games</span>
-                  <span className="text-6xl font-black leading-none text-text">{score?.games?.b ?? 0}</span>
+                  <span className="text-4xl md:text-6xl font-black leading-none text-text">{score?.games?.b ?? 0}</span>
                 </div>
              </div>
           </div>
@@ -257,49 +305,120 @@ const Scoreboard = () => {
       </main>
 
       {/* Footer Controls */}
-      <footer className="p-4 bg-surface grid grid-cols-4 gap-6 border-t border-surface shadow-[0_-20px_60px_rgba(0,0,0,0.3)] relative z-20">
-         <button 
+      <footer className="shrink-0 px-4 pt-4 bg-surface grid grid-cols-5 gap-3 border-t border-surface shadow-[0_-20px_60px_rgba(0,0,0,0.3)] relative z-20" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
+         <button
           onClick={copyOverlayLink}
-          className="flex flex-col items-center justify-center p-4 rounded-3xl bg-background hover:bg-background/80 border border-text/5 transition-all hover:scale-105 active:scale-95 shadow-lg"
+          className="flex flex-col items-center justify-center py-2.5 px-2 rounded-2xl bg-background hover:bg-background/80 border border-text/5 transition-all hover:scale-105 active:scale-95 shadow-lg"
          >
-            <Share2 className="w-6 h-6 mb-2 text-primary" />
-            <span className="text-[10px] uppercase font-black tracking-widest leading-none text-text">Overlay</span>
+            <LinkIcon className="w-5 h-5 mb-1 fill-current text-primary" />
+            <span className="text-[9px] uppercase font-black tracking-widest leading-none text-text">Copiar link</span>
          </button>
-         
-         <button 
+
+         <button
           onClick={() => setIsStatsOpen(true)}
-          className="flex flex-col items-center justify-center p-4 rounded-3xl bg-background hover:bg-background/80 border border-text/5 transition-all hover:scale-105 active:scale-95 shadow-lg"
+          className="flex flex-col items-center justify-center py-2.5 px-2 rounded-2xl bg-background hover:bg-background/80 border border-text/5 transition-all hover:scale-105 active:scale-95 shadow-lg"
          >
-            <Activity className="w-6 h-6 mb-2 text-success" />
-            <span className="text-[10px] uppercase font-black tracking-widest leading-none text-text">Stats</span>
+            <Activity className="w-5 h-5 mb-1 text-success" />
+            <span className="text-[9px] uppercase font-black tracking-widest leading-none text-text">Estatísticas</span>
          </button>
 
-         <button 
-            onClick={handleUndo}
-            disabled={status === 'finished'}
-            className="flex flex-col items-center justify-center p-4 rounded-3xl bg-slate-800 text-white shadow-xl border border-white/10 hover:scale-105 active:scale-95 transition-all disabled:opacity-20"
+         <button
+          onClick={() => navigate(`/match/${matchId}/stats`)}
+          className="flex flex-col items-center justify-center py-2.5 px-2 rounded-2xl bg-background hover:bg-background/80 border border-text/5 transition-all hover:scale-105 active:scale-95 shadow-lg"
          >
-            <span className="text-lg font-black uppercase italic tracking-tighter">Resetar placar</span>
+            <BarChart3 className="w-5 h-5 mb-1 text-accent" />
+            <span className="text-[9px] uppercase font-black tracking-widest leading-none text-text">Análises</span>
          </button>
 
-         <button 
-            onClick={handleFinish}
+         <button
+            onClick={() => setConfirmModal('reset')}
             disabled={status === 'finished'}
-            className="flex flex-col items-center justify-center p-4 rounded-3xl bg-background hover:bg-error/10 border border-error/20 transition-all hover:scale-105 active:scale-95 text-error shadow-xl disabled:opacity-20"
+            className="flex flex-col items-center justify-center py-2.5 px-2 rounded-2xl bg-slate-800 text-white shadow-xl border border-white/10 hover:scale-105 active:scale-95 transition-all disabled:opacity-20"
          >
-            <TrophyIcon className="w-6 h-6 mb-2 fill-current" />
-            <span className="text-[10px] uppercase font-black tracking-widest leading-none">Finish</span>
+            <span className="text-xs font-black uppercase italic tracking-tighter leading-tight text-center">Resetar</span>
+         </button>
+
+         <button
+            onClick={() => setConfirmModal('finish')}
+            disabled={status === 'finished'}
+            className="flex flex-col items-center justify-center py-2.5 px-2 rounded-2xl bg-background hover:bg-error/10 border border-error/20 transition-all hover:scale-105 active:scale-95 text-error shadow-xl disabled:opacity-20"
+         >
+            <TrophyIcon className="w-5 h-5 mb-1 fill-current" />
+            <span className="text-[9px] uppercase font-black tracking-widest leading-none">Finalizar</span>
          </button>
       </footer>
 
       {matchId && (
-        <StatsModal 
-          matchId={matchId} 
-          isOpen={isStatsOpen} 
-          onClose={() => setIsStatsOpen(false)} 
+        <StatsModal
+          matchId={matchId}
+          isOpen={isStatsOpen}
+          onClose={() => setIsStatsOpen(false)}
           settings={settings}
           currentSet={(score?.sets?.length || 0) + 1}
         />
+      )}
+
+      {confirmModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => setConfirmModal(null)}
+        >
+          <div
+            className="bg-surface w-full max-w-sm rounded-[2rem] border border-text/10 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex flex-col items-center px-8 pt-8 pb-6 text-center">
+              <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-4 ${confirmModal === 'finish' || confirmModal === 'timer' ? 'bg-error/10' : 'bg-text/5'}`}>
+                {confirmModal === 'finish'
+                  ? <TrophyIcon className="w-8 h-8 fill-current text-error" />
+                  : confirmModal === 'timer'
+                  ? <RotateCcw className="w-7 h-7 text-error" />
+                  : <RotateCcw className="w-7 h-7 text-text-muted" />
+                }
+              </div>
+              <h2 className="text-xl font-black uppercase italic tracking-tighter text-text mb-2">
+                {confirmModal === 'finish' ? 'Finalizar Partida' : confirmModal === 'timer' ? 'Zerar Timer' : 'Resetar Placar'}
+              </h2>
+              <p className="text-sm text-text-muted leading-relaxed">
+                {confirmModal === 'finish'
+                  ? 'A partida será encerrada definitivamente. Esta ação não pode ser revertida.'
+                  : confirmModal === 'timer'
+                  ? 'O cronômetro será zerado e pausado. As estatísticas da partida não serão afetadas.'
+                  : 'O placar registrado será reiniciado. Esta ação não pode ser desfeita.'
+                }
+              </p>
+            </div>
+
+            <div className="flex gap-3 px-8 pb-8">
+              <button
+                onClick={() => setConfirmModal(null)}
+                className="flex-1 py-3 rounded-xl bg-text/5 hover:bg-text/10 text-text font-black uppercase text-sm transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={async () => {
+                  const action = confirmModal
+                  setConfirmModal(null)
+                  if (action === 'finish') {
+                    await handleFinish()
+                  } else if (action === 'timer') {
+                    await handleResetTimer()
+                  } else {
+                    await handleUndo()
+                  }
+                }}
+                className={`flex-1 py-3 rounded-xl font-black uppercase text-sm transition-all shadow-lg ${
+                  confirmModal === 'finish' || confirmModal === 'timer'
+                    ? 'bg-error hover:bg-error/90 text-white shadow-error/20'
+                    : 'bg-text/80 hover:bg-text text-background shadow-text/10'
+                }`}
+              >
+                {confirmModal === 'finish' ? 'Finalizar' : confirmModal === 'timer' ? 'Zerar' : 'Resetar'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

@@ -2,7 +2,14 @@ import { useEffect, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router'
 import { supabase } from '../services/supabase/client'
 import { Timer } from 'lucide-react'
-import { useTheme } from '../theme/theme-provider'
+
+const BG_MAP: Record<string, string> = {
+  green:       '#00FF00',
+  magenta:     '#FF00FF',
+  blue:        '#0000FF',
+  cyan:        '#00FFFF',
+  pink:        '#FF00FF', // legacy alias
+}
 
 const Overlay = () => {
   const { matchId } = useParams()
@@ -10,41 +17,10 @@ const Overlay = () => {
   const [match, setMatch] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
-  const { theme } = useTheme()
-  const [isDarkMode, setIsDarkMode] = useState(false)
 
-  useEffect(() => {
-    const checkTheme = () => {
-      if (theme === 'dark') {
-        setIsDarkMode(true)
-      } else if (theme === 'light') {
-        setIsDarkMode(false)
-      } else {
-        setIsDarkMode(window.matchMedia('(prefers-color-scheme: dark)').matches)
-      }
-    }
-
-    checkTheme()
-
-    if (theme === 'system') {
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-      const listener = (e: MediaQueryListEvent) => {
-        setIsDarkMode(e.matches)
-      }
-      mediaQuery.addEventListener('change', listener)
-      return () => mediaQuery.removeEventListener('change', listener)
-    }
-  }, [theme])
-
-  const bgParam = searchParams.get('bg')
-  const getBgClass = () => {
-    if (bgParam === 'green') return 'bg-[#00FF00]'
-    if (bgParam === 'pink') return 'bg-[#FF00FF]'
-    if (bgParam === 'transparent') return 'bg-transparent'
-    
-    // Default Chroma Key background based on theme mode
-    return isDarkMode ? 'bg-[#FF00FF]' : 'bg-[#00FF00]'
-  }
+  const bgParam = searchParams.get('bg') || 'green'
+  const isTransparent = bgParam === 'transparent'
+  const bgStyle = isTransparent ? {} : { backgroundColor: BG_MAP[bgParam] || '#00FF00' }
 
   useEffect(() => {
     if (!matchId) return
@@ -111,7 +87,7 @@ const Overlay = () => {
   const players = match.settings?.players || { teamA: ['Time A'], teamB: ['Time B'] }
 
   return (
-    <div className={`min-h-screen ${getBgClass()} p-8 flex items-start justify-start`}>
+    <div className="min-h-screen p-8 flex items-start justify-start" style={bgStyle}>
       <div className="flex flex-col">
         
         {/* Timer - only visible if showFullStats is NOT true */}

@@ -46,3 +46,71 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
+
+/* ── Color theme overrides ────────────────────────────────── */
+
+html.theme-sky {
+  --color-primary: #0ea5e9;
+  --color-primary-foreground: #ffffff;
+  --color-accent: #f59e0b;
+}
+html.dark.theme-sky {
+  --color-primary: #38bdf8;
+  --color-primary-foreground: #082f49;
+  --color-accent: #fbbf24;
+}
+
+html.theme-emerald {
+  --color-primary: #10b981;
+  --color-primary-foreground: #ffffff;
+  --color-accent: #6366f1;
+}
+html.dark.theme-emerald {
+  --color-primary: #34d399;
+  --color-primary-foreground: #022c22;
+  --color-accent: #818cf8;
+}
+
+html.theme-violet {
+  --color-primary: #7c3aed;
+  --color-primary-foreground: #ffffff;
+  --color-accent: #ec4899;
+}
+html.dark.theme-violet {
+  --color-primary: #a78bfa;
+  --color-primary-foreground: #1e1b4b;
+  --color-accent: #f472b6;
+}
+
+html.theme-rose {
+  --color-primary: #e11d48;
+  --color-primary-foreground: #ffffff;
+  --color-accent: #8b5cf6;
+}
+html.dark.theme-rose {
+  --color-primary: #fb7185;
+  --color-primary-foreground: #3f0e1a;
+  --color-accent: #c084fc;
+}
+
+html.theme-amber {
+  --color-primary: #d97706;
+  --color-primary-foreground: #ffffff;
+  --color-accent: #ef4444;
+}
+html.dark.theme-amber {
+  --color-primary: #fbbf24;
+  --color-primary-foreground: #451a03;
+  --color-accent: #f87171;
+}
+
+html.theme-slate {
+  --color-primary: #475569;
+  --color-primary-foreground: #ffffff;
+  --color-accent: #22c55e;
+}
+html.dark.theme-slate {
+  --color-primary: #94a3b8;
+  --color-primary-foreground: #0f172a;
+  --color-accent: #4ade80;
+}

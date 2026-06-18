@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../services/supabase/client'
-import { Plus, Play, LogOut, BarChart3, Timer, User as UserIcon } from 'lucide-react'
+import { Plus, LogOut, BarChart3, Timer, User as UserIcon, Settings } from 'lucide-react'
 import { useNavigate } from 'react-router'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import { toast } from 'sonner'
-import { useTheme } from '../theme/theme-provider'
 
 const SunIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" {...props}>
@@ -36,6 +35,36 @@ const TrashIcon = (props: React.SVGProps<SVGSVGElement>) => (
   </svg>
 )
 
+const IconBtn = ({
+  onClick,
+  label,
+  color = 'default',
+  children,
+}: {
+  onClick: (e: React.MouseEvent) => void
+  label: string
+  color?: 'default' | 'primary' | 'error'
+  children: React.ReactNode
+}) => {
+  const colorCls =
+    color === 'primary' ? 'text-primary hover:bg-primary/10 hover:text-primary' :
+    color === 'error'   ? 'text-error hover:bg-error/10 hover:text-error' :
+                          'text-text-muted hover:bg-white/8 hover:text-text'
+  return (
+    <div className="relative group/tip">
+      <button
+        onClick={onClick}
+        className={`p-2 rounded-xl transition-all cursor-pointer hover:scale-110 active:scale-90 ${colorCls}`}
+      >
+        {children}
+      </button>
+      <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-0.5 rounded-lg bg-surface border border-text/10 shadow-lg text-[9px] font-bold text-text-muted whitespace-nowrap opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
+        {label}
+      </span>
+    </div>
+  )
+}
+
 const MatchCard = ({ match, onRefresh }: { match: any, onRefresh: () => void }) => {
   const navigate = useNavigate()
   const [elapsed, setElapsed] = useState(0)
@@ -63,7 +92,8 @@ const MatchCard = ({ match, onRefresh }: { match: any, onRefresh: () => void }) 
 
   const copyOverlay = (e: React.MouseEvent) => {
     e.stopPropagation()
-    const link = `${window.location.origin}/overlay/${match.id}`
+    const bg = localStorage.getItem('scoreboard-bt-overlay') || 'green'
+    const link = `${window.location.origin}/overlay/${match.id}?bg=${bg}`
     navigator.clipboard.writeText(link)
     toast.success('Link do Overlay copiado!')
   }
@@ -102,7 +132,7 @@ const MatchCard = ({ match, onRefresh }: { match: any, onRefresh: () => void }) 
   }
 
   return (
-    <div 
+    <div
       className="group relative bg-surface p-6 rounded-3xl border border-surface/50 hover:border-primary/50 transition-all cursor-pointer shadow-sm hover:shadow-xl"
       onClick={() => navigate(`/match/${match.id}`)}
     >
@@ -119,39 +149,23 @@ const MatchCard = ({ match, onRefresh }: { match: any, onRefresh: () => void }) 
           </div>
         </div>
 
-        {/* Right: Badge and Actions */}
-        <div className="flex items-center justify-end gap-1.5">
-          {/* Badge */}
-          <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shrink-0 transition-all duration-300 flex items-center ${match.status === 'live' ? 'bg-success/10 text-success' : 'bg-text-muted/10 text-text-muted'}`}>
-             {match.status === 'live' ? (
-                <>
-                  <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse mr-2"></span>
-                  {match.status}
-                </>
-             ) : (
-                match.status
-             )}
-          </span>
-
-          {/* Actions */}
-          <div className="flex items-center gap-1 overflow-hidden transition-all duration-300 max-w-0 opacity-0 group-hover:max-w-[120px] group-hover:opacity-100">
-            <button onClick={copyOverlay} className="p-1.5 hover:bg-surface rounded-xl transition-colors text-primary shrink-0" title="Copiar Link do Overlay">
-              <LinkIcon className="w-4 h-4 fill-current" />
-            </button>
-            {match.status === 'live' && (
-              <button onClick={finishMatch} className="p-1.5 hover:bg-surface rounded-xl transition-colors text-error shrink-0" title="Finalizar Partida">
-                <TrophyIcon className="w-4 h-4 fill-current" />
-              </button>
+        {/* Right: Badge only */}
+        <div className="flex items-center justify-end">
+          <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shrink-0 flex items-center ${match.status === 'live' ? 'bg-success/10 text-success' : 'bg-text-muted/10 text-text-muted'}`}>
+            {match.status === 'live' ? (
+              <>
+                <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse mr-2"></span>
+                {match.status}
+              </>
+            ) : (
+              match.status
             )}
-            <button onClick={deleteMatch} className="p-1.5 hover:bg-surface rounded-xl transition-colors text-error shrink-0" title="Apagar Partida">
-              <TrashIcon className="w-4 h-4 fill-current" />
-            </button>
-          </div>
+          </span>
         </div>
       </div>
 
       <div className="flex justify-between items-center mb-8">
-         <div className="text-center flex-1">
+         <div className="text-center flex-1 min-w-0">
             <p className="text-[10px] font-black uppercase text-text-muted mb-1 truncate">
               {match.settings?.players?.teamA?.join(' / ') || 'Time A'}
             </p>
@@ -160,7 +174,7 @@ const MatchCard = ({ match, onRefresh }: { match: any, onRefresh: () => void }) 
             </p>
          </div>
          <div className="px-4 text-text-muted font-black italic opacity-20">VS</div>
-         <div className="text-center flex-1">
+         <div className="text-center flex-1 min-w-0">
             <p className="text-[10px] font-black uppercase text-text-muted mb-1 truncate">
               {match.settings?.players?.teamB?.join(' / ') || 'Time B'}
             </p>
@@ -172,19 +186,24 @@ const MatchCard = ({ match, onRefresh }: { match: any, onRefresh: () => void }) 
 
       <div className="flex items-center justify-between text-[10px] font-black text-text-muted uppercase tracking-widest pt-4 border-t border-white/5">
         <span>
-          Sets: {match.score?.sets?.filter((s:any) => s.a > s.b).length ?? match.score?.teamA?.sets ?? 0} 
-          - {match.score?.sets?.filter((s:any) => s.b > s.a).length ?? match.score?.teamB?.sets ?? 0}
+          Sets: {match.score?.sets?.filter((s:any) => s.a > s.b).length ?? match.score?.teamA?.sets ?? 0}
+          {' - '}{match.score?.sets?.filter((s:any) => s.b > s.a).length ?? match.score?.teamB?.sets ?? 0}
         </span>
-        <div className="flex gap-2">
-           <button 
-            onClick={(e) => { e.stopPropagation(); navigate(`/match/${match.id}/stats`); }}
-            className="p-2 hover:bg-white/5 rounded-lg transition-colors"
-           >
-              <BarChart3 className="w-3 h-3" />
-           </button>
-           <button className="p-2 hover:bg-white/5 rounded-lg transition-colors">
-              <Play className="w-3 h-3 text-primary fill-primary" />
-           </button>
+        <div className="flex gap-0.5">
+          <IconBtn onClick={(e) => { e.stopPropagation(); navigate(`/match/${match.id}/stats`) }} label="Estatísticas">
+            <BarChart3 className="w-3.5 h-3.5" />
+          </IconBtn>
+          <IconBtn onClick={copyOverlay} label="Copiar Overlay" color="primary">
+            <LinkIcon className="w-3.5 h-3.5 fill-current" />
+          </IconBtn>
+          {match.status === 'live' && (
+            <IconBtn onClick={finishMatch} label="Finalizar Partida" color="error">
+              <TrophyIcon className="w-3.5 h-3.5 fill-current" />
+            </IconBtn>
+          )}
+          <IconBtn onClick={deleteMatch} label="Apagar Partida" color="error">
+            <TrashIcon className="w-3.5 h-3.5 fill-current" />
+          </IconBtn>
         </div>
       </div>
     </div>
@@ -197,7 +216,6 @@ const Dashboard = () => {
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const [showSavedStatsOnly, setShowSavedStatsOnly] = useState(false)
   const navigate = useNavigate()
-  const { theme, setTheme } = useTheme()
   const [selectedStat, setSelectedStat] = useState<any>(null)
 
   useEffect(() => {
@@ -237,27 +255,29 @@ const Dashboard = () => {
             <span className="text-sm font-black uppercase tracking-[0.2em] text-text">Scoreboard<span className="text-primary">BT</span></span>
           </div>
 
-          {/* Right: user + actions */}
+          {/* Right: user pill + settings gear + logout */}
           <div className="flex items-center gap-1">
-            {/* User pill */}
-            <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-surface border border-white/5 mr-3">
-              <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary border border-primary/20 shrink-0">
-                <UserIcon className="w-3.5 h-3.5" />
+            {/* User pill (display only) */}
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface border border-white/5 mr-1">
+              <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary border border-primary/20 shrink-0 overflow-hidden">
+                {user?.user_metadata?.avatar_url ? (
+                  <img src={user.user_metadata.avatar_url} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <UserIcon className="w-3.5 h-3.5" />
+                )}
               </div>
-              <span className="text-xs font-black truncate max-w-[140px]">{user?.email?.split('@')[0]}</span>
+              <span className="text-xs font-black truncate max-w-[120px]">
+                {user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0]}
+              </span>
             </div>
 
-            {/* Theme toggle */}
+            {/* Settings gear — navigates to /settings page */}
             <button
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="p-2.5 hover:bg-surface rounded-xl transition-all hover:scale-105 active:scale-95"
-              title={theme === 'dark' ? 'Mudar para modo claro' : 'Mudar para modo escuro'}
+              onClick={() => navigate('/settings')}
+              className="p-2.5 hover:bg-surface rounded-xl transition-all hover:scale-105 active:scale-95 text-text-muted hover:text-primary"
+              title="Configurações"
             >
-              {theme === 'dark' ? (
-                <SunIcon className="w-4 h-4 fill-current text-accent" />
-              ) : (
-                <MoonIcon className="w-4 h-4 fill-current text-primary" />
-              )}
+              <Settings className="w-4 h-4" />
             </button>
 
             {/* Logout */}
