@@ -12,6 +12,7 @@ import { useTheme, OVERLAY_COLORS } from '../theme/theme-provider'
 import type { OverlayColor } from '../theme/theme-provider'
 import { COLOR_THEMES } from '../theme/color-themes'
 import type { ColorThemeId } from '../theme/color-themes'
+import { OVERLAY_THEMES } from './Overlay'
 
 type Tab = 'account' | 'appearance' | 'faq'
 
@@ -38,6 +39,12 @@ async function compressImage(file: File, maxW: number, maxH: number): Promise<st
 const TrophyIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" {...props}>
     <path d="M208.3 64L432.3 64C458.8 64 480.4 85.8 479.4 112.2C479.2 117.5 479 122.8 478.7 128L528.3 128C554.4 128 577.4 149.6 575.4 177.8C567.9 281.5 514.9 338.5 457.4 368.3C441.6 376.5 425.5 382.6 410.2 387.1C390 415.7 369 430.8 352.3 438.9L352.3 512L416.3 512C434 512 448.3 526.3 448.3 544C448.3 561.7 434 576 416.3 576L224.3 576C206.6 576 192.3 561.7 192.3 544C192.3 526.3 206.6 512 224.3 512L288.3 512L288.3 438.9C272.3 431.2 252.4 416.9 233 390.6C214.6 385.8 194.6 378.5 175.1 367.5C121 337.2 72.2 280.1 65.2 177.6C63.3 149.5 86.2 127.9 112.3 127.9L161.9 127.9C161.6 122.7 161.4 117.5 161.2 112.1C160.2 85.6 181.8 63.9 208.3 63.9zM165.5 176L113.1 176C119.3 260.7 158.2 303.1 198.3 325.6C183.9 288.3 172 239.6 165.5 176zM444 320.8C484.5 297 521.1 254.7 527.3 176L475 176C468.8 236.9 457.6 284.2 444 320.8z" />
+  </svg>
+)
+
+const ArrowDownIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" {...props}>
+    <path d="M297.4 566.6C309.9 579.1 330.2 579.1 342.7 566.6L502.7 406.6C515.2 394.1 515.2 373.8 502.7 361.3C490.2 348.8 469.9 348.8 457.4 361.3L352 466.7L352 96C352 78.3 337.7 64 320 64C302.3 64 288 78.3 288 96L288 466.7L182.6 361.3C170.1 348.8 149.8 348.8 137.3 361.3C124.8 373.8 124.8 394.1 137.3 406.6L297.3 566.6z" />
   </svg>
 )
 
@@ -91,6 +98,11 @@ export default function Settings() {
   const [website, setWebsite] = useState('')
   const [publicEmail, setPublicEmail] = useState('')
 
+  const [ovTheme, setOvTheme] = useState('navy-yellow')
+  const [ovPosition, setOvPosition] = useState('top-left')
+  const [ovScale, setOvScale] = useState(1.0)
+  const [ovSaving, setOvSaving] = useState(false)
+
   const [openFaq, setOpenFaq] = useState<number | null>(null)
 
   const [feedbackMood, setFeedbackMood] = useState<string | null>(null)
@@ -118,6 +130,10 @@ export default function Settings() {
       setWhatsapp(m.whatsapp || '')
       setWebsite(m.website || '')
       setPublicEmail(m.public_email || '')
+      const oc = m.overlayConfig || {}
+      setOvTheme(oc.theme || 'navy-yellow')
+      setOvPosition(oc.position || 'top-left')
+      setOvScale(oc.scale || 1.0)
     })
   }, [navigate])
 
@@ -175,6 +191,33 @@ export default function Settings() {
       toast.success('Link enviado para ' + user.email)
     } catch (err: any) {
       toast.error(err.message)
+    }
+  }
+
+  const handleSaveOverlay = async () => {
+    if (!user) return
+    setOvSaving(true)
+    try {
+      const overlayConfig = { theme: ovTheme, position: ovPosition, scale: ovScale }
+      const { data, error } = await supabase.auth.updateUser({ data: { ...user.user_metadata, overlayConfig } })
+      if (error) throw error
+      if (data.user) setUser(data.user)
+
+      // Propagate to all user matches so overlay reads it immediately
+      const { data: matches } = await supabase.from('matches').select('id, settings')
+      if (matches?.length) {
+        await Promise.all(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          matches.map((m: any) =>
+            supabase.from('matches').update({ settings: { ...m.settings, overlayConfig } }).eq('id', m.id)
+          )
+        )
+      }
+      toast.success('Aparência do overlay salva!')
+    } catch (err: any) {
+      toast.error('Erro ao salvar: ' + err.message)
+    } finally {
+      setOvSaving(false)
     }
   }
 
@@ -660,6 +703,117 @@ export default function Settings() {
                 <div className="bg-surface px-4 py-2 flex items-center gap-2">
                   <span className="text-[10px] text-text-muted font-medium">Esta cor é usada automaticamente ao copiar o link do overlay no Dashboard.</span>
                 </div>
+              </div>
+            </div>
+
+            {/* Overlay appearance */}
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">Overlay — Aparência do Placar</p>
+              <p className="text-xs text-text-muted font-medium mb-4 leading-relaxed">
+                Defina o tema de cores, posição e tamanho do placar. Aplica-se a todas as suas partidas.
+              </p>
+
+              <div className="bg-surface rounded-2xl border border-text/10 p-4 space-y-3">
+
+                {/* Cores */}
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-text-muted w-14 shrink-0">Cores</span>
+                  <div className="flex gap-2.5">
+                    {Object.entries(OVERLAY_THEMES).map(([key, t]) => (
+                      <button
+                        key={key}
+                        onClick={() => setOvTheme(key)}
+                        title={t.label}
+                        className="relative w-8 h-8 rounded-full transition-all shrink-0"
+                        style={{
+                          background: t.bg,
+                          boxShadow: ovTheme === key
+                            ? `0 0 0 2px white, 0 0 0 3.5px ${t.accent}`
+                            : '0 0 0 1.5px rgba(0,0,0,0.15)',
+                          transform: ovTheme === key ? 'scale(1.15)' : undefined,
+                        }}
+                      >
+                        <div className="absolute bottom-0.5 right-0.5 w-2.5 h-2.5 rounded-full border border-black/20" style={{ background: t.accent }} />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Posição + Tamanho na mesma linha */}
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-text-muted w-14 shrink-0">Posição</span>
+                  <div className="flex gap-1">
+                    {([
+                      { key: 'top-left',     rot: 135  },
+                      { key: 'top-right',    rot: -135 },
+                      { key: 'center',       rot: null },
+                      { key: 'bottom-left',  rot: 45   },
+                      { key: 'bottom-right', rot: -45  },
+                    ] as const).map(({ key, rot }) => (
+                      <button
+                        key={key}
+                        onClick={() => setOvPosition(key)}
+                        className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all border-2 ${
+                          ovPosition === key
+                            ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                            : 'bg-background text-text-muted border-text/10 hover:border-text/25 hover:text-text'
+                        }`}
+                      >
+                        {rot === null ? (
+                          <span className="text-xs font-black">⊙</span>
+                        ) : (
+                          <ArrowDownIcon
+                            style={{ width: 13, height: 13, transform: `rotate(${rot}deg)` }}
+                            fill="currentColor"
+                          />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-text-muted shrink-0">Tam.</span>
+                  <div className="flex gap-1">
+                    {([{ v: 0.8, l: 'P' }, { v: 1.0, l: 'M' }, { v: 1.25, l: 'G' }] as const).map(({ v, l }) => (
+                      <button
+                        key={l}
+                        onClick={() => setOvScale(v)}
+                        className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all border-2 ${
+                          ovScale === v
+                            ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                            : 'bg-background text-text-muted border-text/10 hover:border-text/25 hover:text-text'
+                        }`}
+                      >
+                        {l}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Mini preview */}
+                <div
+                  className="rounded-xl h-12 flex items-center justify-center gap-2"
+                  style={{ background: OVERLAY_THEMES[ovTheme]?.bg || '#0B3B60' }}
+                >
+                  <span className="text-white font-black italic text-xs uppercase truncate max-w-[80px]" style={{ letterSpacing: '-0.02em' }}>Atleta A</span>
+                  <div className="flex gap-1 shrink-0">
+                    <div className="w-8 h-6 rounded-md flex items-center justify-center font-black text-base" style={{ background: OVERLAY_THEMES[ovTheme]?.accent, color: OVERLAY_THEMES[ovTheme]?.accentText, letterSpacing: '-0.04em' }}>15</div>
+                    <div className="w-7 h-6 rounded-md flex items-center justify-center font-black text-base text-white" style={{ background: 'rgba(255,255,255,0.12)' }}>2</div>
+                    <div className="w-7 h-6 rounded-md flex items-center justify-center font-black text-base" style={{ background: 'rgba(255,255,255,0.92)', color: OVERLAY_THEMES[ovTheme]?.bg }}>1</div>
+                  </div>
+                  <span className="text-white font-black italic text-xs uppercase truncate max-w-[80px]" style={{ letterSpacing: '-0.02em' }}>Atleta B</span>
+                </div>
+
+                <button
+                  onClick={handleSaveOverlay}
+                  disabled={ovSaving}
+                  className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground py-2.5 rounded-xl font-black uppercase tracking-wider text-xs disabled:opacity-50 hover:opacity-90 active:scale-[0.98] transition-all shadow-md shadow-primary/15"
+                >
+                  {ovSaving ? (
+                    <>
+                      <span className="w-3.5 h-3.5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                      Salvando...
+                    </>
+                  ) : 'Salvar Aparência do Overlay'}
+                </button>
               </div>
             </div>
           </div>

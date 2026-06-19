@@ -8,6 +8,7 @@
   --color-secondary: #64748b;
   --color-secondary-foreground: #ffffff;
   --color-accent: #f59e0b;
+  --color-accent-foreground: #000000;
   --color-success: #22c55e;
   --color-error: #ef4444;
   --color-text: #0f172a;
@@ -30,6 +31,7 @@
     --color-secondary: #94a3b8;
     --color-secondary-foreground: #0f172a;
     --color-accent: #fbbf24;
+    --color-accent-foreground: #000000;
     --color-success: #4ade80;
     --color-error: #f87171;
     --color-text: #f1f5f9;
@@ -64,6 +66,7 @@ html.theme-emerald {
   --color-primary: #10b981;
   --color-primary-foreground: #ffffff;
   --color-accent: #6366f1;
+  --color-accent-foreground: #ffffff;
 }
 html.dark.theme-emerald {
   --color-primary: #34d399;
@@ -75,6 +78,7 @@ html.theme-violet {
   --color-primary: #7c3aed;
   --color-primary-foreground: #ffffff;
   --color-accent: #ec4899;
+  --color-accent-foreground: #ffffff;
 }
 html.dark.theme-violet {
   --color-primary: #a78bfa;
@@ -86,6 +90,7 @@ html.theme-rose {
   --color-primary: #e11d48;
   --color-primary-foreground: #ffffff;
   --color-accent: #8b5cf6;
+  --color-accent-foreground: #ffffff;
 }
 html.dark.theme-rose {
   --color-primary: #fb7185;
@@ -97,6 +102,7 @@ html.theme-amber {
   --color-primary: #d97706;
   --color-primary-foreground: #ffffff;
   --color-accent: #ef4444;
+  --color-accent-foreground: #ffffff;
 }
 html.dark.theme-amber {
   --color-primary: #fbbf24;

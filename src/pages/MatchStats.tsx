@@ -5,6 +5,7 @@ import { ChevronLeft, Clock, Hash, Zap, Target, AlertTriangle, TrendingUp, Activ
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, AreaChart, Area, PieChart, Pie, Legend } from 'recharts'
 import { toast } from 'sonner'
 import { useMatchStore } from '../store/matchStore'
+import { useTheme } from '../theme/theme-provider'
 
 // Action strings exactly as recorded by StatsModal
 const WINNER_SA = new Set(['ACE', 'WINNER', 'SMASH IN', 'LOB VENCEDOR', 'CURTA VENCEDORA', 'ACELERADA'])
@@ -29,13 +30,22 @@ export default function MatchStats() {
   // Messages state
   const [showMessages, setShowMessages] = useState(false)
   const { setActiveMessage } = useMatchStore()
+  const { colorTheme, theme } = useTheme()
+  const [primaryColor, setPrimaryColor] = useState('#0ea5e9')
+  const [accentColor, setAccentColor] = useState('#f59e0b')
+
+  useEffect(() => {
+    const style = getComputedStyle(document.documentElement)
+    setPrimaryColor(style.getPropertyValue('--color-primary').trim() || '#0ea5e9')
+    setAccentColor(style.getPropertyValue('--color-accent').trim() || '#f59e0b')
+  }, [colorTheme, theme])
 
   // Transmission Control States
   const [ctrlMode, setCtrlMode] = useState<'ATLETA' | 'DUPLA' | 'MENSAGENS'>('ATLETA')
   const [ctrlSelectedPlayers, setCtrlSelectedPlayers] = useState<string[]>([])
   const [ctrlSelectedTeams, setCtrlSelectedTeams] = useState<string[]>([])
   const [ctrlSelectedSet, setCtrlSelectedSet] = useState<'JOGO' | 1 | 2 | 3>('JOGO')
-  const [ctrlSelectedStats, setCtrlSelectedStats] = useState<string[]>([])
+  const [ctrlSelectedStat, setCtrlSelectedStat] = useState<string | null>(null)
   const [ctrlSelectedTime, setCtrlSelectedTime] = useState<string | null>(null)
   const [showOverlayModal, setShowOverlayModal] = useState(false)
 
@@ -238,7 +248,7 @@ export default function MatchStats() {
   if (isPlayerMode) {
     chartLabelA = 'Saque'
     chartLabelB = 'Devolução'
-    chartColorA = '#0ea5e9'
+    chartColorA = primaryColor
     chartColorB = '#22c55e'
     chartTitle = 'Saque vs Devolução'
     chartSubtitle = selectedPlayerName
@@ -246,14 +256,14 @@ export default function MatchStats() {
     const currentPlayers = selectedTeam === 'A' ? teamA : teamB
     chartLabelA = currentPlayers[0] || 'Atleta 1'
     chartLabelB = currentPlayers[1] || 'Atleta 2'
-    chartColorA = selectedTeam === 'A' ? '#0ea5e9' : '#f59e0b'
-    chartColorB = selectedTeam === 'A' ? '#38bdf8' : '#fbbf24'
+    chartColorA = selectedTeam === 'A' ? primaryColor : accentColor
+    chartColorB = selectedTeam === 'A' ? primaryColor + 'aa' : accentColor + 'aa'
     chartTitle = selectedTeam === 'A' ? `${teamLabelA} — por Atleta` : `${teamLabelB} — por Atleta`
   } else {
     chartLabelA = teamLabelA
     chartLabelB = teamLabelB
-    chartColorA = '#0ea5e9'
-    chartColorB = '#f59e0b'
+    chartColorA = primaryColor
+    chartColorB = accentColor
     chartTitle = 'Comparação de Duplas'
   }
 
@@ -280,8 +290,8 @@ export default function MatchStats() {
 
     return {
       name: `Pt ${index + 1}`,
-      'Dupla 1': accA,
-      'Dupla 2': accB
+      [teamLabelA]: accA,
+      [teamLabelB]: accB
     }
   })
 
@@ -411,16 +421,16 @@ export default function MatchStats() {
     if (!matchId || !match) return
 
     if (ctrlMode === 'MENSAGENS') {
-      if (ctrlSelectedStats.length === 0) return toast.error('Selecione uma mensagem.')
+      if (!ctrlSelectedStat) return toast.error('Selecione uma mensagem.')
       await supabase.from('matches').update({
-        settings: { ...match.settings, activeMessage: ctrlSelectedStats[0], activeStatPanel: null } as any
+        settings: { ...match.settings, activeMessage: ctrlSelectedStat, activeStatPanel: null } as any
       }).eq('id', matchId)
       toast.success('Mensagem enviada!')
       return
     }
 
-    if (ctrlSelectedStats.length === 0) return toast.error('Selecione pelo menos uma estatística.')
-    const statLabel = ctrlSelectedStats[0]
+    if (!ctrlSelectedStat) return toast.error('Selecione pelo menos uma estatística.')
+    const statLabel = ctrlSelectedStat
 
     let newStatPanel: any
 
@@ -462,10 +472,10 @@ export default function MatchStats() {
 
   const handleSaveStatsAction = async () => {
     if (!matchId || !match) return
-    if (ctrlSelectedStats.length === 0) return toast.error('Selecione uma estatística para salvar.')
+    if (!ctrlSelectedStat) return toast.error('Selecione uma estatística para salvar.')
 
     const saved = match.settings?.saved_stats || []
-    const statLabel = ctrlSelectedStats[0]
+    const statLabel = ctrlSelectedStat
 
     let context: string
     let valueStr: string
@@ -732,15 +742,15 @@ export default function MatchStats() {
             <div className="w-[1px] h-6 bg-text/10 mx-1 hidden sm:block"></div>
 
             {/* Team Filters */}
-            <button 
+            <button
               onClick={() => { setSelectedTeam('A'); setSelectedPlayer(null); setShowMessages(false) }}
               className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all flex items-center gap-2 ${
                 selectedTeam === 'A' && !showMessages
-                  ? 'bg-[#0ea5e9]/20 text-[#0ea5e9] border border-[#0ea5e9]/50'
+                  ? 'bg-primary/20 text-primary border border-primary/50'
                   : 'text-text-muted hover:bg-text/5 border border-transparent'
               }`}
             >
-              <span className="w-2 h-2 rounded-full bg-[#0ea5e9]"></span> {teamLabelA}
+              <span className="w-2 h-2 rounded-full bg-primary"></span> {teamLabelA}
             </button>
 
             {selectedTeam === 'A' && !showMessages && teamA.map((name, i) => {
@@ -751,8 +761,8 @@ export default function MatchStats() {
                   onClick={() => setSelectedPlayer(selectedPlayer === pid ? null : pid)}
                   className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase transition-all border flex items-center gap-1.5 ${
                     selectedPlayer === pid
-                      ? 'bg-[#0ea5e9] text-white border-[#0ea5e9] shadow-lg shadow-[#0ea5e9]/30'
-                      : 'bg-[#0ea5e9]/10 text-[#0ea5e9] border-[#0ea5e9]/30 hover:bg-[#0ea5e9]/20'
+                      ? 'bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/30'
+                      : 'bg-primary/10 text-primary border-primary/30 hover:bg-primary/20'
                   }`}
                 >
                   <span className="truncate max-w-[80px]">{name}</span>
@@ -760,15 +770,15 @@ export default function MatchStats() {
               )
             })}
 
-            <button 
+            <button
               onClick={() => { setSelectedTeam('B'); setSelectedPlayer(null); setShowMessages(false) }}
               className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all flex items-center gap-2 ${
                 selectedTeam === 'B' && !showMessages
-                  ? 'bg-[#f59e0b]/20 text-[#f59e0b] border border-[#f59e0b]/50'
+                  ? 'bg-accent/20 text-accent border border-accent/50'
                   : 'text-text-muted hover:bg-text/5 border border-transparent'
               }`}
             >
-              <span className="w-2 h-2 rounded-full bg-[#f59e0b]"></span> {teamLabelB}
+              <span className="w-2 h-2 rounded-full bg-accent"></span> {teamLabelB}
             </button>
 
             {selectedTeam === 'B' && !showMessages && teamB.map((name, i) => {
@@ -779,8 +789,8 @@ export default function MatchStats() {
                   onClick={() => setSelectedPlayer(selectedPlayer === pid ? null : pid)}
                   className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase transition-all border flex items-center gap-1.5 ${
                     selectedPlayer === pid
-                      ? 'bg-[#f59e0b] text-black border-[#f59e0b] shadow-lg shadow-[#f59e0b]/30'
-                      : 'bg-[#f59e0b]/10 text-[#f59e0b] border-[#f59e0b]/30 hover:bg-[#f59e0b]/20'
+                      ? 'bg-accent text-accent-foreground border-accent shadow-lg shadow-accent/30'
+                      : 'bg-accent/10 text-accent border-accent/30 hover:bg-accent/20'
                   }`}
                 >
                   <span className="truncate max-w-[80px]">{name}</span>
@@ -822,10 +832,10 @@ export default function MatchStats() {
             <div className="text-4xl font-black italic tracking-tighter text-text">{totalRallies}</div>
           </div>
 
-          <div className="bg-gradient-to-br from-[#0ea5e9]/10 to-transparent p-5 rounded-[2rem] border border-[#0ea5e9]/20 shadow-xl relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><Zap className="w-16 h-16 text-[#0ea5e9]" /></div>
+          <div className="bg-gradient-to-br from-primary/10 to-transparent p-5 rounded-[2rem] border border-primary/20 shadow-xl relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><Zap className="w-16 h-16 text-primary" /></div>
             <div className="flex items-center gap-3 text-text-muted mb-2">
-              <Zap className="w-4 h-4 text-[#0ea5e9]" />
+              <Zap className="w-4 h-4 text-primary" />
               <h3 className="font-black uppercase text-[10px] tracking-widest">Aces</h3>
             </div>
             <div className="text-4xl font-black italic tracking-tighter text-text">{totalAces}</div>
@@ -956,12 +966,12 @@ export default function MatchStats() {
                   <AreaChart data={momentumData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <defs>
                       <linearGradient id="colorA" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0}/>
+                        <stop offset="5%" stopColor={primaryColor} stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor={primaryColor} stopOpacity={0}/>
                       </linearGradient>
                       <linearGradient id="colorB" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
+                        <stop offset="5%" stopColor={accentColor} stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor={accentColor} stopOpacity={0}/>
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#94a3b8" strokeOpacity={0.2} vertical={false} />
@@ -978,8 +988,8 @@ export default function MatchStats() {
                       tick={{ fill: '#64748b', fontSize: 10, fontWeight: 'bold' }} 
                     />
                     <Tooltip content={<CustomTooltip />} cursor={{ fill: '#64748b', opacity: 0.1 }} />
-                    <Area type="monotone" dataKey="Dupla 1" stroke="#0ea5e9" strokeWidth={3} fillOpacity={1} fill="url(#colorA)" />
-                    <Area type="monotone" dataKey="Dupla 2" stroke="#f59e0b" strokeWidth={3} fillOpacity={1} fill="url(#colorB)" />
+                    <Area type="monotone" dataKey={teamLabelA} stroke={primaryColor} strokeWidth={3} fillOpacity={1} fill="url(#colorA)" />
+                    <Area type="monotone" dataKey={teamLabelB} stroke={accentColor} strokeWidth={3} fillOpacity={1} fill="url(#colorB)" />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -1046,7 +1056,7 @@ export default function MatchStats() {
               <div className="flex flex-wrap gap-3 pb-5 border-b border-text/10">
                 {(['ATLETA', 'DUPLA', 'MENSAGENS'] as const).map(mode => (
                   <label key={mode} className="flex items-center gap-2 cursor-pointer">
-                    <input type="radio" name="ctrlMode" checked={ctrlMode === mode} onChange={() => { setCtrlMode(mode); setCtrlSelectedTeams([]); setCtrlSelectedPlayers([]); }} className="w-4 h-4 accent-primary" />
+                    <input type="radio" name="ctrlMode" checked={ctrlMode === mode} onChange={() => { setCtrlMode(mode); setCtrlSelectedTeams([]); setCtrlSelectedPlayers([]); setCtrlSelectedStat(null); }} className="w-4 h-4 accent-primary" />
                     <span className={`text-xs font-black uppercase tracking-widest transition-colors ${ctrlMode === mode ? 'text-primary' : 'text-text-muted'}`}>
                       {mode === 'ATLETA' ? 'Atleta' : mode === 'DUPLA' ? 'Dupla' : 'Mensagens'}
                     </span>
@@ -1059,13 +1069,13 @@ export default function MatchStats() {
                 <div className="flex flex-wrap gap-2">
                   {teamA.map((name, i) => (
                     <button key={`A${i}`} onClick={() => toggleSelection(setCtrlSelectedPlayers, `${name}|A${i}`)}
-                      className={`px-4 py-1.5 rounded-full text-xs font-black flex items-center gap-2 transition-all border ${ctrlSelectedPlayers.includes(`${name}|A${i}`) ? 'bg-[#0ea5e9] text-white border-[#0ea5e9] shadow-lg shadow-[#0ea5e9]/30' : 'bg-text/5 text-text-muted border-transparent hover:bg-text/10'}`}>
+                      className={`px-4 py-1.5 rounded-full text-xs font-black flex items-center gap-2 transition-all border ${ctrlSelectedPlayers.includes(`${name}|A${i}`) ? 'bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/30' : 'bg-text/5 text-text-muted border-transparent hover:bg-text/10'}`}>
                       <Users className="w-3 h-3"/> {name}
                     </button>
                   ))}
                   {teamB.map((name, i) => (
                     <button key={`B${i}`} onClick={() => toggleSelection(setCtrlSelectedPlayers, `${name}|B${i}`)}
-                      className={`px-4 py-1.5 rounded-full text-xs font-black flex items-center gap-2 transition-all border ${ctrlSelectedPlayers.includes(`${name}|B${i}`) ? 'bg-[#f59e0b] text-black border-[#f59e0b] shadow-lg shadow-[#f59e0b]/30' : 'bg-text/5 text-text-muted border-transparent hover:bg-text/10'}`}>
+                      className={`px-4 py-1.5 rounded-full text-xs font-black flex items-center gap-2 transition-all border ${ctrlSelectedPlayers.includes(`${name}|B${i}`) ? 'bg-accent text-accent-foreground border-accent shadow-lg shadow-accent/30' : 'bg-text/5 text-text-muted border-transparent hover:bg-text/10'}`}>
                       <Users className="w-3 h-3"/> {name}
                     </button>
                   ))}
@@ -1073,8 +1083,8 @@ export default function MatchStats() {
               )}
               {ctrlMode === 'DUPLA' && (
                 <div className="flex gap-3">
-                  <button onClick={() => toggleSelection(setCtrlSelectedTeams, 'A')} className={`px-6 py-2 rounded-full text-xs font-black transition-all border ${ctrlSelectedTeams.includes('A') ? 'bg-[#0ea5e9] text-white border-[#0ea5e9]' : 'bg-text/5 text-text-muted border-transparent hover:bg-text/10'}`}>{teamLabelA}</button>
-                  <button onClick={() => toggleSelection(setCtrlSelectedTeams, 'B')} className={`px-6 py-2 rounded-full text-xs font-black transition-all border ${ctrlSelectedTeams.includes('B') ? 'bg-[#f59e0b] text-black border-[#f59e0b]' : 'bg-text/5 text-text-muted border-transparent hover:bg-text/10'}`}>{teamLabelB}</button>
+                  <button onClick={() => toggleSelection(setCtrlSelectedTeams, 'A')} className={`px-6 py-2 rounded-full text-xs font-black transition-all border ${ctrlSelectedTeams.includes('A') ? 'bg-primary text-primary-foreground border-primary' : 'bg-text/5 text-text-muted border-transparent hover:bg-text/10'}`}>{teamLabelA}</button>
+                  <button onClick={() => toggleSelection(setCtrlSelectedTeams, 'B')} className={`px-6 py-2 rounded-full text-xs font-black transition-all border ${ctrlSelectedTeams.includes('B') ? 'bg-accent text-accent-foreground border-accent' : 'bg-text/5 text-text-muted border-transparent hover:bg-text/10'}`}>{teamLabelB}</button>
                 </div>
               )}
 
@@ -1091,7 +1101,7 @@ export default function MatchStats() {
                 <div className="col-span-2 flex flex-col gap-0.5 overflow-y-auto pr-2">
                   {(ctrlMode === 'MENSAGENS' ? ALL_MESSAGES : ALL_STATS).map(stat => (
                     <label key={stat} className="flex items-center gap-2 cursor-pointer uppercase p-1.5 rounded hover:bg-text/5 transition-colors">
-                      <input type="checkbox" checked={ctrlSelectedStats.includes(stat)} onChange={() => toggleSelection(setCtrlSelectedStats, stat)} className="w-4 h-4 accent-primary shrink-0"/> {stat}
+                      <input type="radio" name="ctrlStat" checked={ctrlSelectedStat === stat} onChange={() => setCtrlSelectedStat(stat)} className="w-4 h-4 accent-primary shrink-0"/> {stat}
                     </label>
                   ))}
                 </div>
