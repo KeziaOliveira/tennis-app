@@ -424,7 +424,7 @@ export default function StatsModal({ matchId, isOpen, onClose, settings, current
           )}
         </div>
 
-        <div className="px-8 pb-6 space-y-4 pt-4 overflow-y-auto flex-1">
+        <div className="px-5 sm:px-8 pb-6 space-y-4 pt-4 overflow-y-auto flex-1">
 
           {/* ── Registrar Ponto ── */}
           {activeTab === 'registrar' && (
@@ -524,7 +524,7 @@ export default function StatsModal({ matchId, isOpen, onClose, settings, current
 
               {/* Player picker (ATLETA mode) */}
               {ovMode === 'ATLETA' && (
-                <div className={`grid gap-2 ${allPlayers.length === 4 ? 'grid-cols-4' : 'grid-cols-2'}`}>
+                <div className={`grid gap-2 ${allPlayers.length === 4 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-2'}`}>
                   {allPlayers.map(p => {
                     const pid = `${p.name}|${p.team}${p.index}`
                     const isA = p.team === 'A'
