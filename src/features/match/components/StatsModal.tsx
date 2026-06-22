@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../../../services/supabase/client'
-import { X, Trash2, Monitor } from 'lucide-react'
+import { X, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useMatchStore, type MatchSettings } from '../../../store/matchStore'
 
@@ -243,6 +243,7 @@ export default function StatsModal({ matchId, isOpen, onClose, settings, current
       setSentAt(Date.now())
       setSentDuration(7000)
       setOvSelectedStat(null)
+      onClose()
       return
     }
 
@@ -275,6 +276,7 @@ export default function StatsModal({ matchId, isOpen, onClose, settings, current
     setLastSentLabel(ovSelectedStat)
     setSentAt(Date.now())
     setSentDuration(10000)
+    onClose()
   }
 
   const handleOvClear = async () => {
@@ -372,15 +374,10 @@ export default function StatsModal({ matchId, isOpen, onClose, settings, current
 
   return (
     <div className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm md:flex md:items-center md:justify-center md:p-4">
-      <div className="fixed bottom-0 left-0 right-0 h-[85vh] md:static md:h-auto md:max-h-[90vh] bg-surface w-full max-w-4xl rounded-t-2xl md:rounded-[2.5rem] shadow-2xl border border-white/5 animate-in slide-in-from-bottom duration-300 overflow-hidden flex flex-col">
-
-        {/* Handle indicator — mobile only */}
-        <div className="flex justify-center pt-2.5 pb-0 md:hidden shrink-0">
-          <div className="w-9 h-1 rounded-full bg-text/15" />
-        </div>
+      <div className="fixed inset-0 md:static md:inset-auto md:h-auto md:max-h-[90vh] bg-surface w-full max-w-4xl rounded-none md:rounded-[2.5rem] shadow-2xl border border-white/5 animate-in slide-in-from-bottom duration-300 overflow-hidden flex flex-col">
 
         {/* Header */}
-        <div className="flex justify-between items-center px-5 pt-2 pb-2 md:px-8 md:pt-8 md:pb-4 shrink-0">
+        <div className="flex justify-between items-center px-5 pt-4 pb-2 md:px-8 md:pt-8 md:pb-4 shrink-0">
           <div>
             <h2 className="text-base md:text-xl font-black italic uppercase tracking-tighter leading-tight">Painel de Estatística do Jogo</h2>
             <p className="hidden md:block text-[11px] text-text-muted mt-0.5">{settings?.tournamentName || 'Partida'}</p>
@@ -391,16 +388,17 @@ export default function StatsModal({ matchId, isOpen, onClose, settings, current
         </div>
 
         {/* Tabs */}
-        <div className="flex items-center px-5 md:px-8 gap-3 border-b border-white/5 pb-2 md:pb-4 shrink-0 overflow-x-auto">
+        <div className="flex items-center px-5 md:px-8 gap-2 border-b border-white/5 pb-2 md:pb-4 shrink-0">
           <button
             onClick={() => setActiveTab('registrar')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === 'registrar' ? 'bg-text/10 text-text border border-text/20' : 'text-text-muted hover:bg-text/5'}`}
+            className={`flex items-center px-3 py-1.5 rounded-xl text-xs md:text-sm font-black uppercase tracking-tight md:tracking-widest transition-all whitespace-nowrap ${activeTab === 'registrar' ? 'bg-text/10 text-text border border-text/20' : 'text-text-muted hover:bg-text/5'}`}
           >
-            Registrar Ponto
+            <span className="sm:hidden">Pontuação</span>
+            <span className="hidden sm:inline">Registrar Ponto</span>
           </button>
           <button
             onClick={() => setActiveTab('overlay')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+            className={`flex items-center px-3 py-1.5 rounded-xl text-xs md:text-sm font-black uppercase tracking-tight md:tracking-widest transition-all whitespace-nowrap ${
               activeTab === 'overlay' ? 'bg-primary/15 text-primary border border-primary/30' : 'text-text-muted hover:bg-text/5'
             }`}
           >
@@ -409,26 +407,24 @@ export default function StatsModal({ matchId, isOpen, onClose, settings, current
 
           {/* Live / last-sent status pill */}
           {isLive ? (
-            <div className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-success/10 border border-success/20 text-success text-[9px] font-black uppercase tracking-widest whitespace-nowrap shrink-0">
+            <div className="ml-auto flex items-center gap-1 px-2 py-1 md:px-3 md:py-1.5 rounded-xl bg-success/10 border border-success/20 text-success text-[8px] md:text-[9px] font-black uppercase tracking-tight whitespace-nowrap shrink-0">
               <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse shrink-0" />
-              {liveLabel}
+              <span className="truncate max-w-[80px] md:max-w-none">{liveLabel}</span>
               {remainingSecs !== null && (
                 <span className="opacity-50 font-normal ml-0.5">{remainingSecs}s</span>
               )}
             </div>
           ) : lastSentLabel && (
-            <div className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface border border-secondary/20 text-text-muted text-[9px] font-black uppercase tracking-widest whitespace-nowrap shrink-0">
+            <div className="ml-auto flex items-center gap-1 px-2 py-1 md:px-3 md:py-1.5 rounded-xl bg-surface border border-secondary/20 text-text-muted text-[8px] md:text-[9px] font-black uppercase tracking-tight whitespace-nowrap shrink-0">
               <span className="w-1.5 h-1.5 rounded-full bg-text-muted/40 shrink-0" />
-              {lastSentLabel.substring(0, 22)}
+              <span className="truncate max-w-[80px] md:max-w-none">{lastSentLabel.substring(0, 22)}</span>
             </div>
           )}
         </div>
 
-        <div className="px-5 sm:px-8 pb-6 space-y-4 pt-4 overflow-y-auto flex-1">
-
-          {/* ── Registrar Ponto ── */}
-          {activeTab === 'registrar' && (
-            <>
+        {/* ── Registrar Ponto ── */}
+        {activeTab === 'registrar' && (
+          <div className="px-5 sm:px-8 pb-6 space-y-4 pt-4 overflow-y-auto flex-1">
               <div className="md:grid md:grid-cols-2 md:gap-0">
                 <div className="space-y-2 md:pr-5">
                   <p className="text-xs text-center font-black uppercase tracking-[0.2em] text-text-muted">Atleta no saque:</p>
@@ -498,12 +494,12 @@ export default function StatsModal({ matchId, isOpen, onClose, settings, current
               >
                 {loading ? 'Salvando...' : 'Confirmar Registro'}
               </button>
-            </>
-          )}
+          </div>
+        )}
 
-          {/* ── Overlay Control ── */}
+        {/* ── Overlay Control ── */}
           {activeTab === 'overlay' && (
-            <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200">
+            <div className="px-5 sm:px-8 pt-4 pb-4 flex-1 min-h-0 flex flex-col gap-3 animate-in fade-in zoom-in-95 duration-200">
 
               {/* Mode selector */}
               <div className="flex items-center gap-2">
@@ -570,7 +566,7 @@ export default function StatsModal({ matchId, isOpen, onClose, settings, current
 
               {/* MENSAGENS mode: grid + custom text */}
               {ovMode === 'MENSAGENS' ? (
-                <div className="space-y-3">
+                <div className="flex-1 min-h-0 flex flex-col gap-3 overflow-y-auto">
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                     {OV_MESSAGES_LIST.map((msg) => (
                       <button
@@ -596,7 +592,7 @@ export default function StatsModal({ matchId, isOpen, onClose, settings, current
                 </div>
               ) : (
                 /* Stats list + Set filter */
-                <div className="flex gap-3">
+                <div className="flex gap-3 flex-1 min-h-0">
                   <div className="shrink-0 bg-background rounded-xl border border-text/8 p-2 flex flex-col gap-0.5">
                     {(['JOGO', 1, 2, 3] as const).map(s => (
                       <label key={String(s)} className="flex items-center gap-2 cursor-pointer px-2 py-1.5 rounded hover:bg-text/5 transition-colors text-[10px] font-bold whitespace-nowrap">
@@ -606,7 +602,7 @@ export default function StatsModal({ matchId, isOpen, onClose, settings, current
                     ))}
                   </div>
 
-                  <div className="flex-1 bg-background rounded-xl border border-text/8 overflow-y-auto max-h-44">
+                  <div className="flex-1 min-h-0 bg-background rounded-xl border border-text/8 overflow-y-auto">
                     {ovLoading ? (
                       <div className="flex items-center justify-center h-full text-[10px] text-text-muted uppercase tracking-widest animate-pulse py-8">Carregando...</div>
                     ) : (
@@ -633,7 +629,7 @@ export default function StatsModal({ matchId, isOpen, onClose, settings, current
               )}
 
               {/* Action buttons */}
-              <div className="flex gap-2">
+              <div className="flex gap-2 shrink-0">
                 <button
                   onClick={handleOvClear}
                   className="px-4 py-3 rounded-xl bg-error/10 text-error border border-error/20 font-black uppercase text-[10px] tracking-widest hover:bg-error/20 active:scale-95 transition-all flex items-center gap-1.5"
@@ -645,7 +641,7 @@ export default function StatsModal({ matchId, isOpen, onClose, settings, current
                   disabled={ovSending || !ovSelectedStat || !!settings?.showFullStats}
                   className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground font-black uppercase italic text-sm shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
                 >
-                  {ovSending ? 'Enviando...' : 'Mostrar no Overlay'}
+                  {ovSending ? 'Enviando...' : <><span className="sm:hidden">Mostrar</span><span className="hidden sm:inline">Mostrar no Overlay</span></>}
                 </button>
                 <button
                   onClick={handleOvFullStats}
@@ -662,7 +658,6 @@ export default function StatsModal({ matchId, isOpen, onClose, settings, current
             </div>
           )}
 
-        </div>
       </div>
     </div>
   )

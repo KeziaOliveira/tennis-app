@@ -146,56 +146,101 @@ const Scoreboard = () => {
     <div className="flex flex-col bg-background overflow-hidden select-none" style={{ height: '100dvh', minHeight: 0 }}>
       {/* Header */}
       <header className="shrink-0 bg-surface/30 backdrop-blur-md border-b border-surface sticky top-0 z-20">
-        {/* Linha 1: título */}
-        <div className="flex items-center gap-2 px-3 pt-3 pb-2 border-b border-surface/50">
-          <button onClick={() => navigate('/')} className="p-1.5 hover:bg-surface rounded-xl transition-all active:scale-90 shrink-0">
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <span className="text-[11px] font-black text-primary uppercase tracking-[0.25em] opacity-60 truncate">
-            {settings?.tournamentName || 'Arena Central'}
-          </span>
+
+        {/* ── Mobile header (2 linhas) ── */}
+        <div className="md:hidden">
+          <div className="flex items-center gap-2 px-3 pt-3 pb-2 border-b border-surface/50">
+            <button onClick={() => navigate('/')} className="p-1.5 hover:bg-surface rounded-xl transition-all active:scale-90 shrink-0">
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <span className="text-[11px] font-black text-primary uppercase tracking-[0.25em] opacity-60 truncate">
+              {settings?.tournamentName || 'Arena Central'}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 px-3 py-2">
+            {settings?.timerEnabled !== false ? (
+              <>
+                <div
+                  onClick={() => status !== 'finished' && toggleTimer()}
+                  className={`flex items-center gap-2 px-4 py-1.5 rounded-xl cursor-pointer transition-all border flex-1 ${timer.isRunning ? 'bg-primary/10 border-primary/50 text-primary' : 'bg-surface border-text/5 text-text-muted hover:bg-surface/60'}`}
+                >
+                  <Timer className={`w-4 h-4 shrink-0 ${timer.isRunning ? 'animate-pulse' : ''}`} />
+                  <span className="text-base font-black font-mono leading-none tracking-tighter text-text">
+                    {formatTime(elapsedSeconds)}
+                  </span>
+                </div>
+                <button
+                  onClick={() => setConfirmModal('timer')}
+                  className="p-2 rounded-xl cursor-pointer transition-all border bg-error/10 border-error/20 text-error hover:bg-error/20 active:scale-90 shrink-0"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                </button>
+              </>
+            ) : (
+              <div className="flex-1" />
+            )}
+            <button
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="p-2 hover:bg-surface rounded-xl transition-all active:scale-95 flex items-center justify-center shrink-0"
+            >
+              {theme === 'dark' ? <SunIcon className="w-5 h-5 fill-current text-accent" /> : <MoonIcon className="w-5 h-5 fill-current text-secondary" />}
+            </button>
+            <button onClick={() => navigate('/settings')} className="p-2 hover:bg-surface rounded-xl transition-colors active:scale-90 shrink-0">
+              <Settings className="w-5 h-5 opacity-40" />
+            </button>
+            <button onClick={() => setIsMenuOpen(true)} className="p-2 hover:bg-surface rounded-xl transition-colors active:scale-90 shrink-0">
+              <Menu className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
-        {/* Linha 2: controles */}
-        <div className="flex items-center gap-2 px-3 py-2">
-          {settings?.timerEnabled !== false ? (
-            <>
-              <div
-                onClick={() => status !== 'finished' && toggleTimer()}
-                className={`flex items-center gap-2 px-4 py-1.5 rounded-xl cursor-pointer transition-all border flex-1 ${timer.isRunning ? 'bg-primary/10 border-primary/50 text-primary' : 'bg-surface border-text/5 text-text-muted hover:bg-surface/60'}`}
-              >
-                <Timer className={`w-4 h-4 shrink-0 ${timer.isRunning ? 'animate-pulse' : ''}`} />
-                <span className="text-base font-black font-mono leading-none tracking-tighter text-text">
-                  {formatTime(elapsedSeconds)}
-                </span>
+        {/* ── Desktop header (1 bloco, ícones centralizados na altura total) ── */}
+        <div className="hidden md:flex items-center px-3 py-4 gap-2">
+          {/* Seta — centralizada verticalmente em toda a altura */}
+          <button onClick={() => navigate('/')} className="self-stretch flex items-center justify-center px-2 hover:bg-surface rounded-xl transition-all active:scale-90">
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+
+          {/* Centro: título + timer */}
+          <div className="flex-1 flex flex-col items-center gap-2">
+            <span className="text-sm font-black text-primary uppercase tracking-[0.3em]">
+              {settings?.tournamentName || 'Arena Central'}
+            </span>
+            {settings?.timerEnabled !== false && (
+              <div className="flex items-center gap-2">
+                <div
+                  onClick={() => status !== 'finished' && toggleTimer()}
+                  className={`flex items-center gap-2 px-5 py-2 rounded-xl cursor-pointer transition-all border ${timer.isRunning ? 'bg-primary/10 border-primary/50 text-primary' : 'bg-surface border-text/5 text-text-muted hover:bg-surface/60'}`}
+                >
+                  <Timer className={`w-4 h-4 shrink-0 ${timer.isRunning ? 'animate-pulse' : ''}`} />
+                  <span className="text-lg font-black font-mono leading-none tracking-tighter text-text">
+                    {formatTime(elapsedSeconds)}
+                  </span>
+                </div>
+                <button
+                  onClick={() => setConfirmModal('timer')}
+                  className="p-2 rounded-xl cursor-pointer transition-all border bg-error/10 border-error/20 text-error hover:bg-error/20 active:scale-90"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                </button>
               </div>
-              <button
-                onClick={() => setConfirmModal('timer')}
-                className="p-2 rounded-xl cursor-pointer transition-all border bg-error/10 border-error/20 text-error hover:bg-error/20 active:scale-90 shrink-0"
-              >
-                <RotateCcw className="w-4 h-4" />
-              </button>
-            </>
-          ) : (
-            <div className="flex-1" />
-          )}
-          <button
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="p-2 hover:bg-surface rounded-xl transition-all active:scale-95 flex items-center justify-center shrink-0"
-          >
-            {theme === 'dark' ? (
-              <SunIcon className="w-5 h-5 fill-current text-accent" />
-            ) : (
-              <MoonIcon className="w-5 h-5 fill-current text-secondary" />
             )}
-          </button>
-          <button onClick={() => navigate('/settings')} className="p-2 hover:bg-surface rounded-xl transition-colors active:scale-90 shrink-0">
-            <Settings className="w-5 h-5 opacity-40" />
-          </button>
-          <button onClick={() => setIsMenuOpen(true)} className="p-2 hover:bg-surface rounded-xl transition-colors active:scale-90 shrink-0">
-            <Menu className="w-5 h-5" />
-          </button>
+          </div>
+
+          {/* Direita: tema + config — centralizados verticalmente */}
+          <div className="self-stretch flex items-center gap-1">
+            <button
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="p-2 hover:bg-surface rounded-xl transition-all active:scale-95 flex items-center justify-center"
+            >
+              {theme === 'dark' ? <SunIcon className="w-5 h-5 fill-current text-accent" /> : <MoonIcon className="w-5 h-5 fill-current text-secondary" />}
+            </button>
+            <button onClick={() => navigate('/settings')} className="p-2 hover:bg-surface rounded-xl transition-colors active:scale-90">
+              <Settings className="w-5 h-5 opacity-40" />
+            </button>
+          </div>
         </div>
+
       </header>
 
       {/* Main Scoreboard Area */}
@@ -329,6 +374,48 @@ const Scoreboard = () => {
         </div>
       </main>
 
+      {/* Desktop Footer */}
+      <footer className="hidden md:flex shrink-0 items-center gap-2 px-3 py-2.5 border-t border-surface bg-surface/30 backdrop-blur-md">
+        <button
+          onClick={copyOverlayLink}
+          className="flex-1 flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl bg-background border border-text/8 hover:border-primary/30 hover:bg-primary/5 transition-all active:scale-95"
+        >
+          <LinkIcon className="w-5 h-5 fill-current text-primary" />
+          <span className="text-[10px] font-black uppercase tracking-widest text-text-muted">Copiar Link</span>
+        </button>
+        {settings?.statsEnabled !== false && (
+          <button
+            onClick={() => setIsStatsOpen(true)}
+            className="flex-1 flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl bg-background border border-text/8 hover:border-success/30 hover:bg-success/5 transition-all active:scale-95"
+          >
+            <Activity className="w-5 h-5 text-success" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-text-muted">Estatísticas</span>
+          </button>
+        )}
+        <button
+          onClick={() => navigate(`/match/${matchId}/stats`)}
+          className="flex-1 flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl bg-background border border-text/8 hover:border-accent/30 hover:bg-accent/5 transition-all active:scale-95"
+        >
+          <BarChart3 className="w-5 h-5 text-accent" />
+          <span className="text-[10px] font-black uppercase tracking-widest text-text-muted">Análises</span>
+        </button>
+        <button
+          onClick={() => setConfirmModal('reset')}
+          disabled={status === 'finished'}
+          className="flex-1 flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl bg-background border border-text/8 hover:border-text/20 hover:bg-text/5 transition-all active:scale-95 disabled:opacity-30"
+        >
+          <RotateCcw className="w-5 h-5 text-text-muted" />
+          <span className="text-[10px] font-black uppercase tracking-widest text-text-muted">Resetar</span>
+        </button>
+        <button
+          onClick={() => setConfirmModal('finish')}
+          disabled={status === 'finished'}
+          className="flex-1 flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl bg-error/10 border border-error/20 hover:bg-error/20 transition-all active:scale-95 disabled:opacity-30"
+        >
+          <TrophyIcon className="w-5 h-5 fill-current text-error" />
+          <span className="text-[10px] font-black uppercase tracking-widest text-error">Finalizar</span>
+        </button>
+      </footer>
 
       {matchId && (
         <StatsModal
@@ -347,13 +434,10 @@ const Scoreboard = () => {
           onClick={() => setIsMenuOpen(false)}
         >
           <div
-            className="absolute bottom-0 left-0 right-0 bg-surface rounded-t-[2rem] border-t border-text/10 shadow-2xl animate-in slide-in-from-bottom duration-300"
+            className="absolute inset-x-0 bottom-0 top-0 bg-surface rounded-[0] border-t border-text/10 shadow-2xl animate-in slide-in-from-bottom duration-300 flex flex-col"
             onClick={e => e.stopPropagation()}
           >
-            <div className="flex justify-center pt-3 pb-1">
-              <div className="w-9 h-1 rounded-full bg-text/15" />
-            </div>
-            <div className="flex items-center justify-between px-6 pt-2 pb-3">
+            <div className="flex items-center justify-between px-6 pt-4 pb-3">
               <h2 className="text-sm font-black uppercase italic tracking-tighter">Ações</h2>
               <button onClick={() => setIsMenuOpen(false)} className="p-2 hover:bg-text/5 rounded-full transition-colors">
                 <X className="w-4 h-4 opacity-50" />
