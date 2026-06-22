@@ -293,19 +293,19 @@ const Dashboard = () => {
       </header>
 
       {/* ── Page content ── */}
-      <main className="max-w-7xl mx-auto px-6 py-10 space-y-10">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10 space-y-8 sm:space-y-10">
         {/* Page title & Actions */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div>
+        <div className="flex flex-col items-center gap-6 md:flex-row md:items-end md:justify-between">
+          <div className="text-center md:text-left">
             <h1 className="text-5xl font-black italic uppercase tracking-tighter leading-none mb-2">Dashboard</h1>
             <p className="text-base text-text-muted font-medium">Controle central de partidas</p>
           </div>
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
             <button
               onClick={() => setShowSavedStatsOnly(!showSavedStatsOnly)}
               className={`flex items-center justify-center gap-2 px-6 py-4 rounded-3xl font-black uppercase italic transition-all ${
-                showSavedStatsOnly 
-                  ? 'bg-primary/20 text-primary border-2 border-primary/30 shadow-lg shadow-primary/20' 
+                showSavedStatsOnly
+                  ? 'bg-primary/20 text-primary border-2 border-primary/30 shadow-lg shadow-primary/20'
                   : 'bg-surface text-text border-2 border-surface-foreground/5 hover:border-surface-foreground/20'
               }`}
             >
@@ -324,7 +324,7 @@ const Dashboard = () => {
 
         {/* Matches / Stats Grid */}
         {!showSavedStatsOnly ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-md mx-auto md:max-w-none">
             {loading ? (
               <div className="col-span-full py-20 text-center text-text-muted font-bold italic animate-pulse">Sincronizando partidas...</div>
             ) : matches.length === 0 ? (

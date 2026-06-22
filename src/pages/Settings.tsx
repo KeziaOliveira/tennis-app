@@ -377,18 +377,18 @@ export default function Settings() {
       {/* ── Tab bar ── */}
       <div className="sticky top-16 z-10 bg-background/90 backdrop-blur-sm border-b border-text/8">
         <div className="max-w-3xl mx-auto px-4">
-          <div className="flex gap-1 overflow-x-auto scrollbar-none py-3">
+          <div className="flex gap-1 py-3">
             {tabs.map(({ id, label, Icon }) => (
               <button
                 key={id}
                 onClick={() => setTab(id)}
-                className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider whitespace-nowrap transition-all shrink-0 ${
+                className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all ${
                   tab === id
                     ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
                     : 'text-text-muted hover:text-text hover:bg-text/5'
                 }`}
               >
-                <Icon className="w-3.5 h-3.5" />
+                <Icon className="w-3.5 h-3.5 hidden sm:block" />
                 {label}
               </button>
             ))}
@@ -554,34 +554,35 @@ export default function Settings() {
             {/* Mode */}
             <div>
               <p className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-4">Modo de Exibição</p>
-              <div className="grid grid-cols-2 gap-3 max-w-xs">
+              <div className="grid grid-cols-3 gap-3 w-full">
                 {(
                   [
                     { id: 'light' as const, label: 'Claro', Icon: Sun },
-                    { id: 'dark' as const, label: 'Escuro', Icon: Moon },
+                    { id: 'gray'  as const, label: 'Padrão', Icon: Monitor },
+                    { id: 'dark'  as const, label: 'Escuro', Icon: Moon },
                   ]
                 ).map(({ id, label, Icon }) => (
                   <button
                     key={id}
                     onClick={() => setTheme(id)}
                     className={`flex flex-col items-center gap-3 p-5 rounded-2xl border-2 transition-all ${
-                      theme === id || (theme === 'system' && id === 'dark')
+                      theme === id
                         ? 'border-primary bg-primary/8 shadow-md shadow-primary/10'
                         : 'border-text/10 hover:border-text/25 hover:bg-text/5'
                     }`}
                   >
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                      theme === id || (theme === 'system' && id === 'dark') ? 'bg-primary text-primary-foreground' : 'bg-text/8 text-text-muted'
+                      theme === id ? 'bg-primary text-primary-foreground' : 'bg-text/8 text-text-muted'
                     }`}>
                       <Icon className="w-5 h-5" />
                     </div>
                     <div className="text-center">
                       <p className={`text-xs font-black uppercase tracking-wider ${
-                        theme === id || (theme === 'system' && id === 'dark') ? 'text-primary' : 'text-text-muted'
+                        theme === id ? 'text-primary' : 'text-text-muted'
                       }`}>
                         {label}
                       </p>
-                      {(theme === id || (theme === 'system' && id === 'dark')) && (
+                      {theme === id && (
                         <p className="text-[10px] text-primary/70 mt-0.5 font-bold">Ativo</p>
                       )}
                     </div>
@@ -648,7 +649,6 @@ export default function Settings() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {OVERLAY_COLORS.map((oc) => {
                   const active = overlayColor === oc.id
-                  const isTransparent = oc.id === 'transparent'
                   return (
                     <button
                       key={oc.id}
@@ -659,51 +659,25 @@ export default function Settings() {
                           : 'border-text/10 hover:border-text/25 hover:bg-text/5'
                       }`}
                     >
-                      {/* Swatch */}
                       <div
-                        className={`w-10 h-10 rounded-xl shrink-0 shadow-sm flex items-center justify-center ${isTransparent ? 'border-2 border-dashed border-text/20' : ''}`}
-                        style={{ backgroundColor: isTransparent ? undefined : oc.hex }}
+                        className="w-10 h-10 rounded-xl shrink-0 shadow-sm flex items-center justify-center"
+                        style={{ backgroundColor: oc.hex }}
                       >
-                        {isTransparent && (
-                          <span className="text-[10px] font-black text-text-muted/60 leading-none text-center">α</span>
-                        )}
-                        {active && !isTransparent && (
-                          <Check className="w-4 h-4 text-black drop-shadow" />
-                        )}
+                        {active && <Check className="w-4 h-4 text-black drop-shadow" />}
                       </div>
                       <div className="min-w-0">
                         <p className={`text-xs font-black uppercase tracking-wider ${active ? 'text-primary' : 'text-text'}`}>
                           {oc.label}
                         </p>
                         <p className="text-[10px] text-text-muted font-medium">{oc.description}</p>
-                        {!isTransparent && (
-                          <p className="text-[10px] font-mono text-text-muted/60 mt-0.5">{oc.hex}</p>
-                        )}
+                        <p className="text-[10px] font-mono text-text-muted/60 mt-0.5">{oc.hex}</p>
                       </div>
                     </button>
                   )
                 })}
               </div>
 
-              {/* Overlay preview */}
-              <div className="mt-4 rounded-2xl overflow-hidden border border-text/10 shadow-sm">
-                <div
-                  className="h-20 flex items-center justify-center transition-all duration-300"
-                  style={{
-                    backgroundColor: overlayColor === 'transparent' ? undefined : OVERLAY_COLORS.find(o => o.id === overlayColor)?.hex,
-                    backgroundImage: overlayColor === 'transparent'
-                      ? 'repeating-conic-gradient(#ccc 0% 25%, #fff 0% 50%) 0 0 / 16px 16px'
-                      : undefined,
-                  }}
-                >
-                  <span className="text-[10px] font-black uppercase tracking-widest text-black/40 bg-white/20 px-3 py-1 rounded-lg">
-                    Pré-visualização do fundo do overlay
-                  </span>
-                </div>
-                <div className="bg-surface px-4 py-2 flex items-center gap-2">
-                  <span className="text-[10px] text-text-muted font-medium">Esta cor é usada automaticamente ao copiar o link do overlay no Dashboard.</span>
-                </div>
-              </div>
+              <p className="text-[10px] text-text-muted mt-3">Esta cor é aplicada automaticamente ao copiar o link do overlay no Dashboard.</p>
             </div>
 
             {/* Overlay appearance */}
@@ -713,7 +687,7 @@ export default function Settings() {
                 Defina o tema de cores, posição e tamanho do placar. Aplica-se a todas as suas partidas.
               </p>
 
-              <div className="bg-surface rounded-2xl border border-text/10 p-4 space-y-3">
+              <div className="space-y-3">
 
                 {/* Cores */}
                 <div className="flex items-center gap-3">
@@ -788,33 +762,57 @@ export default function Settings() {
                   </div>
                 </div>
 
-                {/* Mini preview */}
-                <div
-                  className="rounded-xl h-12 flex items-center justify-center gap-2"
-                  style={{ background: OVERLAY_THEMES[ovTheme]?.bg || '#0B3B60' }}
-                >
-                  <span className="text-white font-black italic text-xs uppercase truncate max-w-[80px]" style={{ letterSpacing: '-0.02em' }}>Atleta A</span>
-                  <div className="flex gap-1 shrink-0">
-                    <div className="w-8 h-6 rounded-md flex items-center justify-center font-black text-base" style={{ background: OVERLAY_THEMES[ovTheme]?.accent, color: OVERLAY_THEMES[ovTheme]?.accentText, letterSpacing: '-0.04em' }}>15</div>
-                    <div className="w-7 h-6 rounded-md flex items-center justify-center font-black text-base text-white" style={{ background: 'rgba(255,255,255,0.12)' }}>2</div>
-                    <div className="w-7 h-6 rounded-md flex items-center justify-center font-black text-base" style={{ background: 'rgba(255,255,255,0.92)', color: OVERLAY_THEMES[ovTheme]?.bg }}>1</div>
-                  </div>
-                  <span className="text-white font-black italic text-xs uppercase truncate max-w-[80px]" style={{ letterSpacing: '-0.02em' }}>Atleta B</span>
-                </div>
-
-                <button
-                  onClick={handleSaveOverlay}
-                  disabled={ovSaving}
-                  className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground py-2.5 rounded-xl font-black uppercase tracking-wider text-xs disabled:opacity-50 hover:opacity-90 active:scale-[0.98] transition-all shadow-md shadow-primary/15"
-                >
-                  {ovSaving ? (
-                    <>
-                      <span className="w-3.5 h-3.5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                      Salvando...
-                    </>
-                  ) : 'Salvar Aparência do Overlay'}
-                </button>
               </div>
+
+              {/* Pré-visualização unificada */}
+              <div className="mt-4 p-4 bg-surface rounded-2xl border border-text/10">
+                <p className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-3">Pré-visualização</p>
+                <div
+                  className="rounded-xl overflow-hidden relative w-full"
+                  style={{
+                    aspectRatio: '16/9',
+                    backgroundColor: OVERLAY_COLORS.find(o => o.id === overlayColor)?.hex,
+                  }}
+                >
+                  <div
+                    className="absolute flex items-center gap-0.5 sm:gap-1 px-1.5 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl shadow-xl"
+                    style={{
+                      background: OVERLAY_THEMES[ovTheme]?.bg || '#0B3B60',
+                      ...(ovPosition === 'center'
+                        ? { top: '50%', left: '50%', transform: `translate(-50%, -50%) scale(${ovScale})` }
+                        : ovPosition === 'top-right'
+                        ? { top: 6, right: 6, transformOrigin: 'top right', transform: `scale(${ovScale})` }
+                        : ovPosition === 'bottom-left'
+                        ? { bottom: 6, left: 6, transformOrigin: 'bottom left', transform: `scale(${ovScale})` }
+                        : ovPosition === 'bottom-right'
+                        ? { bottom: 6, right: 6, transformOrigin: 'bottom right', transform: `scale(${ovScale})` }
+                        : { top: 6, left: 6, transformOrigin: 'top left', transform: `scale(${ovScale})` }
+                      ),
+                    }}
+                  >
+                    <span className="text-[7px] sm:text-[13px] text-white font-black italic uppercase whitespace-nowrap" style={{ letterSpacing: '-0.01em' }}>Atleta A</span>
+                    <div className="flex gap-0.5 sm:gap-1 shrink-0">
+                      <div className="w-5 h-3.5 sm:w-9 sm:h-6 rounded sm:rounded-md flex items-center justify-center font-black text-[7px] sm:text-[13px]" style={{ background: OVERLAY_THEMES[ovTheme]?.accent, color: OVERLAY_THEMES[ovTheme]?.accentText, letterSpacing: '-0.03em' }}>15</div>
+                      <div className="w-4 h-3.5 sm:w-7 sm:h-6 rounded sm:rounded-md flex items-center justify-center font-black text-[7px] sm:text-[13px] text-white" style={{ background: 'rgba(255,255,255,0.12)' }}>2</div>
+                      <div className="w-4 h-3.5 sm:w-7 sm:h-6 rounded sm:rounded-md flex items-center justify-center font-black text-[7px] sm:text-[13px]" style={{ background: 'rgba(255,255,255,0.92)', color: OVERLAY_THEMES[ovTheme]?.bg }}>1</div>
+                    </div>
+                    <span className="text-[7px] sm:text-[13px] text-white font-black italic uppercase whitespace-nowrap" style={{ letterSpacing: '-0.01em' }}>Atleta B</span>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={handleSaveOverlay}
+                disabled={ovSaving}
+                className="mt-4 w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground py-2.5 rounded-xl font-black uppercase tracking-wider text-xs disabled:opacity-50 hover:opacity-90 active:scale-[0.98] transition-all shadow-md shadow-primary/15"
+              >
+                {ovSaving ? (
+                  <>
+                    <span className="w-3.5 h-3.5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                    Salvando...
+                  </>
+                ) : 'Salvar Aparência do Overlay'}
+              </button>
             </div>
           </div>
         )}

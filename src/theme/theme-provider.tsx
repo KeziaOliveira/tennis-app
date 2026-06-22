@@ -1,9 +1,9 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import type { ColorThemeId } from './color-themes'
 
-type Theme = 'dark' | 'light' | 'system'
+type Theme = 'dark' | 'light' | 'gray' | 'system'
 
-export type OverlayColor = 'green' | 'magenta' | 'blue' | 'cyan' | 'transparent'
+export type OverlayColor = 'green' | 'magenta' | 'blue' | 'cyan'
 
 export const OVERLAY_COLORS: {
   id: OverlayColor
@@ -11,11 +11,10 @@ export const OVERLAY_COLORS: {
   description: string
   hex: string
 }[] = [
-  { id: 'green',       label: 'Verde',       description: 'Mais comum — Green Screen',   hex: '#00FF00' },
-  { id: 'magenta',     label: 'Magenta',     description: 'Alternativa popular',         hex: '#FF00FF' },
-  { id: 'blue',        label: 'Azul',        description: 'Blue Screen clássico',        hex: '#0000FF' },
-  { id: 'cyan',        label: 'Ciano',       description: 'Variação de tela verde',      hex: '#00FFFF' },
-  { id: 'transparent', label: 'Transparente', description: 'Requer "Allow transparency"', hex: 'transparent' },
+  { id: 'green',   label: 'Verde',   description: 'Mais comum — Green Screen', hex: '#00FF00' },
+  { id: 'magenta', label: 'Magenta', description: 'Alternativa popular',        hex: '#FF00FF' },
+  { id: 'blue',    label: 'Azul',    description: 'Blue Screen clássico',       hex: '#0000FF' },
+  { id: 'cyan',    label: 'Ciano',   description: 'Variação de tela verde',     hex: '#00FFFF' },
 ]
 
 const COLOR_CLASS_PREFIX = 'theme-'
@@ -69,16 +68,19 @@ export function ThemeProvider({
 
   useEffect(() => {
     const root = window.document.documentElement
-    root.classList.remove('light', 'dark')
+    root.classList.remove('light', 'dark', 'gray')
 
-    const resolved =
-      theme === 'system'
-        ? window.matchMedia('(prefers-color-scheme: dark)').matches
-          ? 'dark'
-          : 'light'
-        : theme
-
-    root.classList.add(resolved)
+    if (theme === 'gray') {
+      root.classList.add('gray')
+    } else {
+      const resolved =
+        theme === 'system'
+          ? window.matchMedia('(prefers-color-scheme: dark)').matches
+            ? 'dark'
+            : 'light'
+          : theme
+      root.classList.add(resolved)
+    }
   }, [theme])
 
   useEffect(() => {

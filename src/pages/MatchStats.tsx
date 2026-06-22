@@ -40,19 +40,6 @@ export default function MatchStats() {
     setAccentColor(style.getPropertyValue('--color-accent').trim() || '#f59e0b')
   }, [colorTheme, theme])
 
-  // Transmission Control States
-  const [ctrlMode, setCtrlMode] = useState<'ATLETA' | 'DUPLA' | 'MENSAGENS'>('ATLETA')
-  const [ctrlSelectedPlayers, setCtrlSelectedPlayers] = useState<string[]>([])
-  const [ctrlSelectedTeams, setCtrlSelectedTeams] = useState<string[]>([])
-  const [ctrlSelectedSet, setCtrlSelectedSet] = useState<'JOGO' | 1 | 2 | 3>('JOGO')
-  const [ctrlSelectedStat, setCtrlSelectedStat] = useState<string | null>(null)
-  const [ctrlSelectedTime, setCtrlSelectedTime] = useState<string | null>(null)
-  const [showOverlayModal, setShowOverlayModal] = useState(false)
-
-  const toggleSelection = (setter: React.Dispatch<React.SetStateAction<string[]>>, item: string) => {
-    setter(prev => prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item])
-  }
-
   useEffect(() => {
     if (!matchId) return
 
@@ -329,262 +316,6 @@ export default function MatchStats() {
     return null
   }
 
-  // --- Overlay Control Actions ---
-
-  // Calculates a stat value for the overlay control panel, applying ctrl-specific filters
-  const calcCtrlStat = (statLabel: string, playerFilter?: string, teamFilter?: 'A' | 'B'): number => {
-    const ctrlFiltered = stats.filter(s => {
-      if (s.type === 'message') return false
-      const meta = s.metadata || {}
-      if (ctrlSelectedSet !== 'JOGO' && meta.set_number !== ctrlSelectedSet) return false
-      if (ctrlSelectedTime) {
-        const diffMin = (new Date(s.created_at).getTime() - matchStartTimestamp) / 60000
-        if (diffMin > parseInt(ctrlSelectedTime)) return false
-      }
-      if (playerFilter) {
-        if (meta.serving_player !== playerFilter && meta.returning_player !== playerFilter) return false
-      } else if (teamFilter) {
-        const sp = meta.serving_player || ''
-        const rp = meta.returning_player || ''
-        if (!sp.includes(`|${teamFilter}`) && !rp.includes(`|${teamFilter}`)) return false
-      }
-      return true
-    })
-
-    const isMe = (p: string) =>
-      playerFilter ? p === playerFilter : teamFilter ? p.includes(`|${teamFilter}`) : true
-
-    let count = 0
-    ctrlFiltered.forEach(s => {
-      const meta = s.metadata || {}
-      const sa = meta.serving_action || ''
-      const ra = meta.returning_action || ''
-      const sp = meta.serving_player || ''
-      const rp = meta.returning_player || ''
-
-      switch (statLabel) {
-        case 'ACE':
-          if (sa === 'ACE' && isMe(sp)) count++; break
-        case 'ACELERADA':
-          if (sa === 'ACELERADA' && isMe(sp)) count++
-          if (ra === 'ACELERADA' && isMe(rp)) count++; break
-        case 'CURTA ERRADA':
-          if (sa === 'CURTA ERRADA' && isMe(sp)) count++
-          if (ra === 'CURTA ERRADA' && isMe(rp)) count++; break
-        case 'CURTA VENCEDORA':
-          if (sa === 'CURTA VENCEDORA' && isMe(sp)) count++
-          if ((ra === 'CURTA VENC.' || ra === 'CURTA VENCEDORA') && isMe(rp)) count++; break
-        case 'ERRO DE SAQUE':
-        case 'ERROS DE SAQUE':
-          if (sa === 'ERRO SAQUE' && isMe(sp)) count++; break
-        case 'ERROS DE DEVOLUÇÃO':
-          if (ra === 'ERRO DEVOL.' && isMe(rp)) count++; break
-        case 'ERROS NÃO FORÇADOS':
-          if (sa === 'E.N.F.' && isMe(sp)) count++
-          if (ra === 'E.N.F.' && isMe(rp)) count++; break
-        case 'LOB ERRADO':
-          if (sa === 'LOB FORA' && isMe(sp)) count++
-          if (ra === 'LOB FORA' && isMe(rp)) count++; break
-        case 'LOB VENCEDOR':
-          if (sa === 'LOB VENCEDOR' && isMe(sp)) count++
-          if ((ra === 'LOB VENC.' || ra === 'LOB VENCEDOR') && isMe(rp)) count++; break
-        case 'SAQUES CONFIRMADOS':
-          if (WINNER_SA.has(sa) && isMe(sp)) count++; break
-        case 'WINNER':
-          if (WINNER_SA.has(sa) && isMe(sp)) count++
-          if (WINNER_RA.has(ra) && isMe(rp)) count++; break
-        case 'WINNER DE DEVOLUÇÃO':
-          if ((ra === 'WINNER DEVOL.' || ra === 'WINNER') && isMe(rp)) count++; break
-        case 'PONTOS MARCADOS':
-          // Server wins: won point or returner made error
-          if ((WINNER_SA.has(sa) || ERROR_RA.has(ra)) && isMe(sp)) count++
-          // Returner wins: won point or server made error
-          if ((WINNER_RA.has(ra) || ERROR_SA.has(sa)) && isMe(rp)) count++; break
-        // BREAK POINT and IGUAIS (40 X 40) are game-state messages, not tracked in stat records → 0
-      }
-    })
-    return count
-  }
-
-  const ALL_STATS = [
-    'ACE', 'ACELERADA', 'BREAK POINT', 'CURTA ERRADA', 'CURTA VENCEDORA',
-    'ERRO DE SAQUE', 'ERROS DE DEVOLUÇÃO', 'ERROS NÃO FORÇADOS', 'IGUAIS (40 X 40)',
-    'LOB ERRADO', 'LOB VENCEDOR', 'PONTOS MARCADOS', 'SAQUES CONFIRMADOS',
-    'WINNER', 'WINNER DE DEVOLUÇÃO'
-  ]
-  const ALL_MESSAGES = [
-    'BREAK POINT', 'NOME DO TORNEIO', 'PONTO DO GAME', 'PONTO DO JOGO',
-    'SET ENCERRADO', 'SET POINT', 'SUPER TIE-BREAK', 'TIE-BREAK', 'TROCA DE LADO'
-  ]
-
-  const handleShowAction = async () => {
-    if (!matchId || !match) return
-
-    if (ctrlMode === 'MENSAGENS') {
-      if (!ctrlSelectedStat) return toast.error('Selecione uma mensagem.')
-      await supabase.from('matches').update({
-        settings: { ...match.settings, activeMessage: ctrlSelectedStat, activeStatPanel: null } as any
-      }).eq('id', matchId)
-      toast.success('Mensagem enviada!')
-      return
-    }
-
-    if (!ctrlSelectedStat) return toast.error('Selecione pelo menos uma estatística.')
-    const statLabel = ctrlSelectedStat
-
-    let newStatPanel: any
-
-    if (ctrlMode === 'DUPLA') {
-      const showA = !ctrlSelectedTeams.length || ctrlSelectedTeams.includes('A')
-      const showB = !ctrlSelectedTeams.length || ctrlSelectedTeams.includes('B')
-      const valA = showA ? calcCtrlStat(statLabel, undefined, 'A') : 0
-      const valB = showB ? calcCtrlStat(statLabel, undefined, 'B') : 0
-      const label = ctrlSelectedTeams.length === 1
-        ? `${statLabel} – Dupla ${ctrlSelectedTeams[0] === 'A' ? '1' : '2'}`
-        : statLabel
-      newStatPanel = { type: 'doubles', statLabel: label, teamAValue: valA.toString(), teamBValue: valB.toString() }
-    } else {
-      // ATLETA mode
-      if (ctrlSelectedPlayers.length === 0) {
-        const valA = calcCtrlStat(statLabel, undefined, 'A')
-        const valB = calcCtrlStat(statLabel, undefined, 'B')
-        newStatPanel = { type: 'doubles', statLabel, teamAValue: valA.toString(), teamBValue: valB.toString() }
-      } else {
-        const playerName = ctrlSelectedPlayers.map(p => p.split('|')[0]).join(', ')
-        const val = ctrlSelectedPlayers.reduce((sum, pid) => sum + calcCtrlStat(statLabel, pid), 0)
-        newStatPanel = { type: 'individual', statLabel, player: playerName, value: val.toString() }
-      }
-    }
-
-    await supabase.from('matches').update({
-      settings: { ...match.settings, activeStatPanel: newStatPanel } as any
-    }).eq('id', matchId)
-
-    toast.success('Estatística enviada!')
-
-    setTimeout(async () => {
-      const { data } = await supabase.from('matches').select('settings').eq('id', matchId).single()
-      if (data?.settings) {
-        await supabase.from('matches').update({ settings: { ...data.settings, activeStatPanel: null } as any }).eq('id', matchId)
-      }
-    }, 15000)
-  }
-
-  const handleSaveStatsAction = async () => {
-    if (!matchId || !match) return
-    if (!ctrlSelectedStat) return toast.error('Selecione uma estatística para salvar.')
-
-    const saved = match.settings?.saved_stats || []
-    const statLabel = ctrlSelectedStat
-
-    let context: string
-    let valueStr: string
-
-    if (ctrlMode === 'ATLETA' && ctrlSelectedPlayers.length > 0) {
-      context = ctrlSelectedPlayers.map(p => p.split('|')[0]).join(', ')
-      const val = ctrlSelectedPlayers.reduce((sum, pid) => sum + calcCtrlStat(statLabel, pid), 0)
-      valueStr = val.toString()
-    } else if (ctrlMode === 'DUPLA' && ctrlSelectedTeams.length === 1) {
-      context = `Dupla ${ctrlSelectedTeams[0] === 'A' ? '1' : '2'}`
-      valueStr = calcCtrlStat(statLabel, undefined, ctrlSelectedTeams[0] as 'A' | 'B').toString()
-    } else if (ctrlMode === 'DUPLA') {
-      context = 'Ambas as Duplas'
-      valueStr = `${calcCtrlStat(statLabel, undefined, 'A')} / ${calcCtrlStat(statLabel, undefined, 'B')}`
-    } else {
-      context = 'Todos os Atletas'
-      valueStr = `${calcCtrlStat(statLabel, undefined, 'A')} / ${calcCtrlStat(statLabel, undefined, 'B')}`
-    }
-
-    const newSave = {
-      id: Math.random().toString(36).substring(7),
-      label: statLabel,
-      context,
-      value: valueStr,
-      timestamp: new Date().toISOString()
-    }
-
-    const newSettings = { ...match.settings, saved_stats: [...saved, newSave] }
-    await supabase.from('matches').update({ settings: newSettings as any }).eq('id', matchId)
-    toast.success('Estatística salva!')
-  }
-
-  const handleSaveStats = async () => {
-    if (!matchId || !match) return
-    const isSaved = !match?.settings?.isStatsSaved
-    const newSettings = { ...match.settings, isStatsSaved: isSaved }
-    await supabase.from('matches').update({ settings: newSettings as any }).eq('id', matchId)
-    toast.success(isSaved ? 'Estatística salva para o Dashboard!' : 'Estatística removida dos salvos.')
-  }
-
-  const handleToggleFullStats = async () => {
-    if (!matchId || !match) return
-    const showFullStats = !match?.settings?.showFullStats
-    
-    // Calcula totais reais
-    let fullAcesA = 0, fullAcesB = 0
-    let fullWinnersA = 0, fullWinnersB = 0
-    let fullErrorsA = 0, fullErrorsB = 0
-    let fullPointsA = 0, fullPointsB = 0
-    
-    stats.forEach(s => {
-      if (s.type === 'message') return
-      const meta = s.metadata || {}
-      const sa = meta.serving_action || ''
-      const ra = meta.returning_action || ''
-      const sp = meta.serving_player || ''
-      const rp = meta.returning_player || ''
-
-      const isA = (p: string) => p.includes('|A')
-      const isB = (p: string) => p.includes('|B')
-      
-      if (sa === 'ACE') {
-        if (isA(sp)) fullAcesA++
-        if (isB(sp)) fullAcesB++
-      }
-      
-      const isWinner = (action: string) => action.includes('VENC') || action === 'ACE' || action === 'SMASH IN'
-      if (isWinner(sa)) {
-         if (isA(sp)) fullWinnersA++; if (isB(sp)) fullWinnersB++
-      }
-      if (isWinner(ra)) {
-         if (isA(rp)) fullWinnersA++; if (isB(rp)) fullWinnersB++
-      }
-      
-      const isError = (action: string) => action.includes('ERRO') || action.includes('OUT') || action.includes('ERRADA') || action.includes('FALTA')
-      if (isError(sa)) {
-         if (isA(sp)) fullErrorsA++; if (isB(sp)) fullErrorsB++
-      }
-      if (isError(ra)) {
-         if (isA(rp)) fullErrorsA++; if (isB(rp)) fullErrorsB++
-      }
-      
-      if (isWinner(sa) || isError(ra)) {
-         if (isA(sp)) fullPointsA++; else if (isB(sp)) fullPointsB++
-      }
-      if (isWinner(ra) || isError(sa)) {
-         if (isA(rp)) fullPointsA++; else if (isB(rp)) fullPointsB++
-      }
-    })
-
-    const fullStatsData = [
-      { label: 'Pontos Feitos', valA: fullPointsA.toString(), valB: fullPointsB.toString() },
-      { label: 'Aces', valA: fullAcesA.toString(), valB: fullAcesB.toString() },
-      { label: 'Winners', valA: fullWinnersA.toString(), valB: fullWinnersB.toString() },
-      { label: 'Erros', valA: fullErrorsA.toString(), valB: fullErrorsB.toString() },
-    ]
-
-    const newSettings = { 
-      ...match.settings, 
-      showFullStats, 
-      fullStatsData, 
-      activeStatPanel: null, 
-      activeMessage: null 
-    }
-    
-    await supabase.from('matches').update({ settings: newSettings as any }).eq('id', matchId)
-    toast.success(showFullStats ? 'Placar final enviado para o Overlay!' : 'Placar final removido.')
-  }
-
   const handleShowOverlayStat = async (label: string, value: number) => {
     if (!matchId || !match) return
     const contextName = selectedPlayerName || (selectedTeam ? (selectedTeam === 'A' ? teamLabelA : teamLabelB) : 'Geral')
@@ -675,43 +406,33 @@ export default function MatchStats() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8 animate-in fade-in duration-500 text-text">
-      <div className="max-w-6xl mx-auto space-y-6">
-        
-        {/* Header */}
-        <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-surface p-4 rounded-[2rem] border border-text/5 shadow-xl">
-          <div className="flex items-center gap-4">
-            <button onClick={() => navigate(`/match/${matchId}`)} className="p-3 bg-text/5 hover:bg-text/10 rounded-2xl transition-all active:scale-95 border border-text/5 shadow-sm text-text">
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <div>
-              <h1 className="text-2xl font-black italic uppercase tracking-tighter text-primary">Estatística do Jogo</h1>
-              <p className="text-[10px] uppercase tracking-[0.2em] text-text-muted">{match?.settings?.tournamentName || 'Resumo da Partida'}</p>
+    <div className="min-h-screen bg-background animate-in fade-in duration-500 text-text">
+
+      {/* Header */}
+      <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-surface/60">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-3">
+          <button onClick={() => navigate(`/match/${matchId}`)} className="p-1.5 hover:bg-surface rounded-xl transition-all active:scale-90 shrink-0">
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-sm font-black italic uppercase tracking-tighter text-primary leading-none">Estatística do Jogo</h1>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-text-muted truncate">{match?.settings?.tournamentName || 'Resumo da Partida'}</p>
+          </div>
+          {(match?.settings?.activeStatPanel || match?.settings?.showFullStats) && (
+            <div className="flex items-center gap-1.5 bg-success/10 border border-success/30 px-2.5 py-1 rounded-xl text-success text-[9px] font-black uppercase tracking-wide shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" /> Overlay Ativo
             </div>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            {/* Overlay Status Indicator */}
-            {(match?.settings?.activeStatPanel || match?.settings?.showFullStats) && (
-              <div className="flex items-center gap-2 bg-success/10 border border-success/30 px-3 py-1.5 rounded-xl text-success text-[10px] font-black uppercase animate-pulse">
-                <span className="w-1.5 h-1.5 rounded-full bg-success"></span> Overlay Ativo
-              </div>
-            )}
-            {/* Overlay Button */}
-            <button
-              onClick={() => setShowOverlayModal(true)}
-              className="flex items-center gap-2 bg-primary/10 border border-primary/20 px-4 py-2.5 rounded-2xl text-primary hover:bg-primary/20 transition-all font-black text-xs uppercase tracking-widest"
-            >
-              <Activity className="w-4 h-4" /> Overlay
-            </button>
-            {match?.settings?.timerEnabled !== false && (
-              <div className="flex items-center gap-2 bg-primary/10 border border-primary/20 px-5 py-2.5 rounded-2xl text-primary shadow-[0_0_15px_rgba(14,165,233,0.1)]">
-                <Clock className="w-4 h-4 animate-pulse" />
-                <span className="font-mono font-black text-xl tracking-tighter">{durationStr}</span>
-              </div>
-            )}
-          </div>
-        </header>
+          )}
+          {match?.settings?.timerEnabled !== false && (
+            <div className="flex items-center gap-1.5 bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-xl text-primary shrink-0">
+              <Clock className="w-3.5 h-3.5" />
+              <span className="font-mono font-black text-sm tracking-tighter">{durationStr}</span>
+            </div>
+          )}
+        </div>
+      </header>
+
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
 
         {/* Match Settings Summary */}
         <div className="flex flex-wrap gap-2 px-1">
@@ -1032,101 +753,6 @@ export default function MatchStats() {
           </div>
         )}
 
-      {/* Overlay Control Modal */}
-      {showOverlayModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setShowOverlayModal(false)}>
-          <div className="bg-surface w-full max-w-3xl rounded-[2rem] border border-text/10 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
-            {/* Modal Header */}
-            <div className="flex justify-between items-center px-6 py-4 border-b border-text/10 bg-text/5">
-              <div className="flex items-center gap-3">
-                <Activity className="w-5 h-5 text-primary animate-pulse" />
-                <h2 className="text-lg font-black italic uppercase tracking-tighter text-text">Controle do Overlay</h2>
-                {(match?.settings?.activeStatPanel || match?.settings?.showFullStats) && (
-                  <span className="text-[10px] bg-success/10 text-success border border-success/30 px-2 py-1 rounded-full font-black uppercase animate-pulse">● Ativo</span>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <button onClick={handleHideOverlayStat} className="text-[10px] bg-error/10 text-error border border-error/20 px-3 py-1.5 rounded-lg font-black uppercase hover:bg-error/20 transition-all">Limpar</button>
-                <button onClick={() => setShowOverlayModal(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-text/5 hover:bg-text/10 text-text transition-colors text-sm">✕</button>
-              </div>
-            </div>
-
-            <div className="p-6 flex flex-col gap-5">
-              {/* Mode Radio Buttons */}
-              <div className="flex flex-wrap gap-3 pb-5 border-b border-text/10">
-                {(['ATLETA', 'DUPLA', 'MENSAGENS'] as const).map(mode => (
-                  <label key={mode} className="flex items-center gap-2 cursor-pointer">
-                    <input type="radio" name="ctrlMode" checked={ctrlMode === mode} onChange={() => { setCtrlMode(mode); setCtrlSelectedTeams([]); setCtrlSelectedPlayers([]); setCtrlSelectedStat(null); }} className="w-4 h-4 accent-primary" />
-                    <span className={`text-xs font-black uppercase tracking-widest transition-colors ${ctrlMode === mode ? 'text-primary' : 'text-text-muted'}`}>
-                      {mode === 'ATLETA' ? 'Atleta' : mode === 'DUPLA' ? 'Dupla' : 'Mensagens'}
-                    </span>
-                  </label>
-                ))}
-              </div>
-
-              {/* Player / Team Chips */}
-              {ctrlMode === 'ATLETA' && (
-                <div className="flex flex-wrap gap-2">
-                  {teamA.map((name, i) => (
-                    <button key={`A${i}`} onClick={() => toggleSelection(setCtrlSelectedPlayers, `${name}|A${i}`)}
-                      className={`px-4 py-1.5 rounded-full text-xs font-black flex items-center gap-2 transition-all border ${ctrlSelectedPlayers.includes(`${name}|A${i}`) ? 'bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/30' : 'bg-text/5 text-text-muted border-transparent hover:bg-text/10'}`}>
-                      <Users className="w-3 h-3"/> {name}
-                    </button>
-                  ))}
-                  {teamB.map((name, i) => (
-                    <button key={`B${i}`} onClick={() => toggleSelection(setCtrlSelectedPlayers, `${name}|B${i}`)}
-                      className={`px-4 py-1.5 rounded-full text-xs font-black flex items-center gap-2 transition-all border ${ctrlSelectedPlayers.includes(`${name}|B${i}`) ? 'bg-accent text-accent-foreground border-accent shadow-lg shadow-accent/30' : 'bg-text/5 text-text-muted border-transparent hover:bg-text/10'}`}>
-                      <Users className="w-3 h-3"/> {name}
-                    </button>
-                  ))}
-                </div>
-              )}
-              {ctrlMode === 'DUPLA' && (
-                <div className="flex gap-3">
-                  <button onClick={() => toggleSelection(setCtrlSelectedTeams, 'A')} className={`px-6 py-2 rounded-full text-xs font-black transition-all border ${ctrlSelectedTeams.includes('A') ? 'bg-primary text-primary-foreground border-primary' : 'bg-text/5 text-text-muted border-transparent hover:bg-text/10'}`}>{teamLabelA}</button>
-                  <button onClick={() => toggleSelection(setCtrlSelectedTeams, 'B')} className={`px-6 py-2 rounded-full text-xs font-black transition-all border ${ctrlSelectedTeams.includes('B') ? 'bg-accent text-accent-foreground border-accent' : 'bg-text/5 text-text-muted border-transparent hover:bg-text/10'}`}>{teamLabelB}</button>
-                </div>
-              )}
-
-              {/* Columns */}
-              <div className="grid grid-cols-4 gap-4 border border-text/10 rounded-xl p-4 bg-background/50 h-56 overflow-hidden text-xs font-bold">
-                <div className="flex flex-col gap-1 border-r border-text/10 pr-3 overflow-y-auto">
-                  {(['JOGO', 1, 2, 3] as const).map(s => (
-                    <label key={String(s)} className="flex items-center gap-2 cursor-pointer p-1.5 rounded hover:bg-text/5 transition-colors">
-                      <input type="radio" name="ctrlSet" checked={ctrlSelectedSet === s} onChange={() => setCtrlSelectedSet(s)} className="w-4 h-4 accent-primary shrink-0"/>
-                      {s === 'JOGO' ? 'JOGO' : `${s}º Set`}
-                    </label>
-                  ))}
-                </div>
-                <div className="col-span-2 flex flex-col gap-0.5 overflow-y-auto pr-2">
-                  {(ctrlMode === 'MENSAGENS' ? ALL_MESSAGES : ALL_STATS).map(stat => (
-                    <label key={stat} className="flex items-center gap-2 cursor-pointer uppercase p-1.5 rounded hover:bg-text/5 transition-colors">
-                      <input type="radio" name="ctrlStat" checked={ctrlSelectedStat === stat} onChange={() => setCtrlSelectedStat(stat)} className="w-4 h-4 accent-primary shrink-0"/> {stat}
-                    </label>
-                  ))}
-                </div>
-                <div className="flex flex-col gap-1 border-l border-text/10 pl-3 overflow-y-auto">
-                  {(['15', '30', '60', '90'] as const).map(t => (
-                    <label key={t} className="flex items-center gap-2 cursor-pointer p-1.5 rounded hover:bg-text/5 transition-colors">
-                      <input type="checkbox" checked={ctrlSelectedTime === t} onChange={() => setCtrlSelectedTime(ctrlSelectedTime === t ? null : t)} className="w-4 h-4 accent-primary shrink-0"/>
-                      {t}' VIZ
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                <button onClick={async () => { await handleShowAction(); setShowOverlayModal(false) }} className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground py-3 rounded-xl text-sm font-black uppercase italic shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">MOSTRAR</button>
-                <button onClick={handleSaveStatsAction} className="flex-1 bg-text/10 hover:bg-text/20 text-text py-3 rounded-xl font-black uppercase text-sm transition-all">SALVAR ESTATÍSTICA</button>
-                <button onClick={async () => { await handleToggleFullStats(); setShowOverlayModal(false) }} className={`flex-1 py-3 rounded-xl font-black uppercase text-sm transition-all shadow-lg ${match?.settings?.showFullStats ? 'bg-error text-error-foreground hover:bg-error/90' : 'bg-text/80 hover:bg-text text-background'}`}>
-                  {match?.settings?.showFullStats ? 'OCULTAR PLACAR' : 'PLACAR FINAL'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
       </div>
     </div>
   )

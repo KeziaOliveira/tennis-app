@@ -23,6 +23,13 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {
+  .gray {
+    --color-background: #f1f5f9;
+    --color-surface: #e2e8f0;
+    --color-text: #1e293b;
+    --color-text-muted: #64748b;
+  }
+
   .dark {
     --color-background: #020617;
     --color-surface: #0f172a;
