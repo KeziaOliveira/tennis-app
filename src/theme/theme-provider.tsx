@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import type { ColorThemeId } from './color-themes'
 
 type Theme = 'dark' | 'light' | 'gray' | 'system'
@@ -34,6 +34,7 @@ interface ThemeProviderState {
   setColorTheme: (color: ColorThemeId) => void
   overlayColor: OverlayColor
   setOverlayColor: (color: OverlayColor) => void
+  syncFromMetadata: (meta: Record<string, unknown>) => void
 }
 
 const ThemeProviderContext = createContext<ThemeProviderState>({
@@ -43,6 +44,7 @@ const ThemeProviderContext = createContext<ThemeProviderState>({
   setColorTheme: () => null,
   overlayColor: 'green',
   setOverlayColor: () => null,
+  syncFromMetadata: () => null,
 })
 
 export function ThemeProvider({
@@ -89,6 +91,24 @@ export function ThemeProvider({
     root.classList.add(`${COLOR_CLASS_PREFIX}${colorTheme}`)
   }, [colorTheme])
 
+  const syncFromMetadata = useCallback((meta: Record<string, unknown>) => {
+    const savedTheme = meta.theme as Theme | undefined
+    const savedColor = meta.colorTheme as ColorThemeId | undefined
+    const savedOverlay = meta.overlayColor as OverlayColor | undefined
+    if (savedTheme) {
+      localStorage.setItem(storageKey, savedTheme)
+      setThemeState(savedTheme)
+    }
+    if (savedColor) {
+      localStorage.setItem('scoreboard-bt-color', savedColor)
+      setColorThemeState(savedColor)
+    }
+    if (savedOverlay) {
+      localStorage.setItem('scoreboard-bt-overlay', savedOverlay)
+      setOverlayColorState(savedOverlay)
+    }
+  }, [storageKey])
+
   return (
     <ThemeProviderContext.Provider
       value={{
@@ -107,6 +127,7 @@ export function ThemeProvider({
           localStorage.setItem('scoreboard-bt-overlay', c)
           setOverlayColorState(c)
         },
+        syncFromMetadata,
       }}
     >
       {children}

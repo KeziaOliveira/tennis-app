@@ -103,6 +103,11 @@ export default function Settings() {
   const [ovScale, setOvScale] = useState(1.0)
   const [ovSaving, setOvSaving] = useState(false)
 
+  const persistThemePref = (key: string, value: string) => {
+    if (!user) return
+    supabase.auth.updateUser({ data: { ...user.user_metadata, [key]: value } }).catch(() => {})
+  }
+
   const [openFaq, setOpenFaq] = useState<number | null>(null)
 
   const [feedbackMood, setFeedbackMood] = useState<string | null>(null)
@@ -564,7 +569,7 @@ export default function Settings() {
                 ).map(({ id, label, Icon }) => (
                   <button
                     key={id}
-                    onClick={() => setTheme(id)}
+                    onClick={() => { setTheme(id); persistThemePref('theme', id) }}
                     className={`flex flex-col items-center gap-3 p-5 rounded-2xl border-2 transition-all ${
                       theme === id
                         ? 'border-primary bg-primary/8 shadow-md shadow-primary/10'
@@ -601,7 +606,7 @@ export default function Settings() {
                   return (
                     <button
                       key={ct.id}
-                      onClick={() => setColorTheme(ct.id as ColorThemeId)}
+                      onClick={() => { setColorTheme(ct.id as ColorThemeId); persistThemePref('colorTheme', ct.id) }}
                       className={`flex items-center gap-3 p-4 rounded-2xl border-2 text-left transition-all ${
                         active
                           ? 'border-primary bg-primary/8 shadow-md shadow-primary/10'
@@ -652,7 +657,7 @@ export default function Settings() {
                   return (
                     <button
                       key={oc.id}
-                      onClick={() => setOverlayColor(oc.id as OverlayColor)}
+                      onClick={() => { setOverlayColor(oc.id as OverlayColor); persistThemePref('overlayColor', oc.id) }}
                       className={`flex items-center gap-3 p-4 rounded-2xl border-2 text-left transition-all ${
                         active
                           ? 'border-primary bg-primary/8 shadow-md shadow-primary/10'

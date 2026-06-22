@@ -192,6 +192,7 @@ export default function MatchSetup() {
         .from('matches')
         .insert({
           tournament_id: tournamentId,
+          user_id: user?.id,
           status: 'live',
           settings: {
             ...settings,

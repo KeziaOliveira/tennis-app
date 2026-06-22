@@ -11,23 +11,27 @@ import { useEffect, useState } from 'react'
 import { supabase } from './services/supabase/client'
 import type { Session } from '@supabase/supabase-js'
 import { Toaster } from 'sonner'
+import { useTheme } from './theme/theme-provider'
 
 function App() {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
+  const { syncFromMetadata } = useTheme()
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
+      if (session?.user?.user_metadata) syncFromMetadata(session.user.user_metadata)
       setLoading(false)
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
+      if (session?.user?.user_metadata) syncFromMetadata(session.user.user_metadata)
     })
 
     return () => subscription.unsubscribe()
-  }, [])
+  }, [syncFromMetadata])
 
   if (loading) {
     return (
