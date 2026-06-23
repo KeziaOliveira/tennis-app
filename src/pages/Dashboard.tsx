@@ -277,6 +277,7 @@ const Dashboard = () => {
     const { data } = await supabase
       .from('matches')
       .select('*')
+      .eq('user_id', currentUser.id)
       .order('created_at', { ascending: false })
 
     if (data) setMatches(data)
