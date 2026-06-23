@@ -16,6 +16,7 @@ export interface MatchSettings {
   statsEnabled: boolean
   timerEnabled: boolean
   saqueEnabled?: boolean
+  autoOpenStats?: boolean
   players?: {
     teamA: string[]
     teamB: string[]
@@ -33,6 +34,12 @@ export interface MatchSettings {
   showFullStats?: boolean
   fullStatsData?: { label: string, valA: string, valB: string }[]
   isStatsSaved?: boolean
+  overlayConfig?: {
+    theme?: string
+    position?: string
+    scale?: number
+    bgColor?: string
+  }
 }
 
 export interface TimerState {
@@ -130,7 +137,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     const state = get()
     if (!state.matchId) return
 
-    const newSettings = { ...state.settings, activeMessage: msg }
+    const newSettings = { ...state.settings, activeMessage: msg, activeStatPanel: null }
     set({ settings: newSettings })
 
     await supabase

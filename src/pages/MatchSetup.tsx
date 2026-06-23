@@ -34,8 +34,42 @@ const COUNTRIES = [
   { code: 'NL', name: 'Holanda' },
 ]
 
-const flag = (code: string) =>
-  code.toUpperCase().split('').map(c => String.fromCodePoint(c.charCodeAt(0) + 127397)).join('')
+const BR_STATES = [
+  { code: 'AC', name: 'Acre' },
+  { code: 'AL', name: 'Alagoas' },
+  { code: 'AP', name: 'Amapá' },
+  { code: 'AM', name: 'Amazonas' },
+  { code: 'BA', name: 'Bahia' },
+  { code: 'CE', name: 'Ceará' },
+  { code: 'DF', name: 'Distrito Federal' },
+  { code: 'ES', name: 'Espírito Santo' },
+  { code: 'GO', name: 'Goiás' },
+  { code: 'MA', name: 'Maranhão' },
+  { code: 'MT', name: 'Mato Grosso' },
+  { code: 'MS', name: 'Mato Grosso do Sul' },
+  { code: 'MG', name: 'Minas Gerais' },
+  { code: 'PA', name: 'Pará' },
+  { code: 'PB', name: 'Paraíba' },
+  { code: 'PR', name: 'Paraná' },
+  { code: 'PE', name: 'Pernambuco' },
+  { code: 'PI', name: 'Piauí' },
+  { code: 'RJ', name: 'Rio de Janeiro' },
+  { code: 'RN', name: 'Rio Grande do Norte' },
+  { code: 'RS', name: 'Rio Grande do Sul' },
+  { code: 'RO', name: 'Rondônia' },
+  { code: 'RR', name: 'Roraima' },
+  { code: 'SC', name: 'Santa Catarina' },
+  { code: 'SP', name: 'São Paulo' },
+  { code: 'SE', name: 'Sergipe' },
+  { code: 'TO', name: 'Tocantins' },
+]
+
+const STATE_CODES = new Set(BR_STATES.map(s => s.code))
+
+const flag = (code: string) => {
+  if (STATE_CODES.has(code.toUpperCase())) return '🇧🇷'
+  return code.toUpperCase().split('').map(c => String.fromCodePoint(c.charCodeAt(0) + 127397)).join('')
+}
 
 const CountryPicker = ({
   value, onChange, hasError = false,
@@ -77,8 +111,8 @@ const CountryPicker = ({
       </button>
 
       {open && (
-        <div className="absolute top-[calc(100%+6px)] left-0 z-50 bg-surface rounded-2xl border border-text/10 shadow-2xl overflow-hidden w-48 animate-in fade-in zoom-in-95 duration-150">
-          <div className="max-h-64 overflow-y-auto">
+        <div className="absolute top-[calc(100%+6px)] left-0 z-50 bg-surface rounded-2xl border border-text/10 shadow-2xl overflow-hidden w-52 animate-in fade-in zoom-in-95 duration-150">
+          <div className="max-h-72 overflow-y-auto">
             <button
               onClick={() => { onChange(''); setOpen(false) }}
               className="w-full px-4 py-2.5 text-left text-xs font-black text-text-muted hover:bg-text/5 transition-colors flex items-center gap-3"
@@ -87,19 +121,37 @@ const CountryPicker = ({
               <span>Nenhum</span>
             </button>
             <div className="h-px bg-text/5 mx-3" />
+            <p className="px-4 py-1.5 text-[9px] font-black uppercase tracking-widest text-text-muted/50">Países</p>
             {COUNTRIES.map(c => (
               <button
                 key={c.code}
                 onClick={() => { onChange(c.code); setOpen(false) }}
-                className={`w-full px-4 py-2.5 flex items-center gap-3 text-sm transition-colors ${
+                className={`w-full px-4 py-2 flex items-center gap-3 text-sm transition-colors ${
                   value === c.code
                     ? 'bg-primary/10 text-primary'
                     : 'text-text hover:bg-text/5'
                 }`}
               >
                 <span className="text-xl leading-none">{flag(c.code)}</span>
-                <span className="font-bold flex-1 text-left">{c.name}</span>
+                <span className="font-bold flex-1 text-left text-xs">{c.name}</span>
                 <span className="text-[10px] font-black text-text-muted/60">{c.code}</span>
+              </button>
+            ))}
+            <div className="h-px bg-text/5 mx-3 mt-1" />
+            <p className="px-4 py-1.5 text-[9px] font-black uppercase tracking-widest text-text-muted/50">Estados Brasileiros</p>
+            {BR_STATES.map(s => (
+              <button
+                key={s.code}
+                onClick={() => { onChange(s.code); setOpen(false) }}
+                className={`w-full px-4 py-2 flex items-center gap-3 text-sm transition-colors ${
+                  value === s.code
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-text hover:bg-text/5'
+                }`}
+              >
+                <span className="text-xl leading-none">🇧🇷</span>
+                <span className="font-bold flex-1 text-left text-xs">{s.name}</span>
+                <span className="text-[10px] font-black text-text-muted/60">{s.code}</span>
               </button>
             ))}
           </div>
@@ -139,7 +191,7 @@ export default function MatchSetup() {
   const [teamB, setTeamB] = useState<TeamState>({ p1: '', c1: '', p2: '', c2: '' })
   const [settings, setSettings] = useState({
     noAd: true, maxGames: 6, tiebreak: true,
-    statsEnabled: true, timerEnabled: true, saqueEnabled: true,
+    statsEnabled: true, timerEnabled: true, saqueEnabled: true, autoOpenStats: false,
   })
 
   useEffect(() => {
@@ -265,7 +317,7 @@ export default function MatchSetup() {
         {/* Title */}
         <div className="flex items-end justify-between">
           <div>
-            <h1 className="text-5xl font-black italic uppercase tracking-tighter leading-none mb-2">Nova Partida</h1>
+            <h1 className="text-5xl font-black italic uppercase tracking-tighter leading-none mb-2">Novo Evento</h1>
             <p className="text-base text-text-muted font-medium">Configure os times e regras da partida</p>
           </div>
           <button
@@ -393,7 +445,10 @@ export default function MatchSetup() {
             <Toggle active={settings.noAd} onToggle={() => setSettings({ ...settings, noAd: !settings.noAd })} label="No-Ad" />
             <Toggle active={settings.tiebreak} onToggle={() => setSettings({ ...settings, tiebreak: !settings.tiebreak })} label="Tiebreak" />
             <Toggle active={settings.saqueEnabled} onToggle={() => setSettings({ ...settings, saqueEnabled: !settings.saqueEnabled })} label="Saque" />
-            <Toggle active={settings.statsEnabled} onToggle={() => setSettings({ ...settings, statsEnabled: !settings.statsEnabled })} label="Stats" />
+            <Toggle active={settings.statsEnabled} onToggle={() => setSettings({ ...settings, statsEnabled: !settings.statsEnabled, autoOpenStats: false })} label="Stats" />
+            {settings.statsEnabled && (
+              <Toggle active={settings.autoOpenStats} onToggle={() => setSettings({ ...settings, autoOpenStats: !settings.autoOpenStats })} label="Stats por Ponto" />
+            )}
             <Toggle active={settings.timerEnabled} onToggle={() => setSettings({ ...settings, timerEnabled: !settings.timerEnabled })} label="Timer" />
           </div>
         </section>

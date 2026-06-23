@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router'
 import { supabase } from '../services/supabase/client'
-import { ChevronLeft, Clock, Hash, Zap, Target, AlertTriangle, TrendingUp, Activity, Users, MessageSquare } from 'lucide-react'
+import { ChevronLeft, Clock, Hash, Zap, Target, AlertTriangle, TrendingUp, Activity, Users, MessageSquare, Bookmark } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, AreaChart, Area, PieChart, Pie, Legend } from 'recharts'
 import { toast } from 'sonner'
 import { useMatchStore } from '../store/matchStore'
@@ -405,6 +405,27 @@ export default function MatchStats() {
     toast.success('Estatística removida do overlay.')
   }
 
+  const handleSaveAnalysis = async () => {
+    if (!matchId || !match) return
+    const teamA = (match.settings?.players?.teamA || ['Time A']).join(' & ')
+    const teamB = (match.settings?.players?.teamB || ['Time B']).join(' & ')
+    const totalStats = stats.filter((s) => s.type === 'stat').length
+    const entry = {
+      id: Date.now().toString(),
+      savedAt: new Date().toISOString(),
+      label: 'Análise do Jogo',
+      context: `${teamA} vs ${teamB}`,
+      value: totalStats.toString(),
+    }
+    const newSettings = {
+      ...match.settings,
+      saved_stats: [...(match.settings?.saved_stats || []), entry],
+    }
+    await supabase.from('matches').update({ settings: newSettings as any }).eq('id', matchId)
+    setMatch({ ...match, settings: newSettings })
+    toast.success('Análise salva!')
+  }
+
   return (
     <div className="min-h-screen bg-background animate-in fade-in duration-500 text-text">
 
@@ -415,9 +436,17 @@ export default function MatchStats() {
             <ChevronLeft className="w-5 h-5" />
           </button>
           <div className="flex-1 min-w-0">
-            <h1 className="text-sm font-black italic uppercase tracking-tighter text-primary leading-none">Estatística do Jogo</h1>
+            <h1 className="text-sm font-black italic uppercase tracking-tighter text-primary leading-none">Análise do Jogo</h1>
             <p className="text-[10px] uppercase tracking-[0.2em] text-text-muted truncate">{match?.settings?.tournamentName || 'Resumo da Partida'}</p>
           </div>
+          <button
+            onClick={handleSaveAnalysis}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface border border-text/10 hover:border-primary/40 hover:bg-primary/5 text-text-muted hover:text-primary transition-all shrink-0"
+            title="Salvar análise"
+          >
+            <Bookmark className="w-3.5 h-3.5" />
+            <span className="text-[10px] font-black uppercase tracking-wide hidden sm:inline">Salvar</span>
+          </button>
           {(match?.settings?.activeStatPanel || match?.settings?.showFullStats) && (
             <div className="flex items-center gap-1.5 bg-success/10 border border-success/30 px-2.5 py-1 rounded-xl text-success text-[9px] font-black uppercase tracking-wide shrink-0">
               <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" /> Overlay Ativo

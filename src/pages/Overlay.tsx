@@ -35,9 +35,7 @@ const Overlay = () => {
   const [loading, setLoading] = useState(true)
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
 
-  const bgParam = searchParams.get('bg') || 'green'
-  const isTransparent = bgParam === 'transparent'
-  const bgStyle = isTransparent ? {} : { backgroundColor: BG_MAP[bgParam] || '#00FF00' }
+  const bgParam = searchParams.get('bg')
 
   useEffect(() => {
     if (!matchId) return
@@ -72,6 +70,9 @@ const Overlay = () => {
   /* ── Config do overlay ── */
   const cfg            = match.settings?.overlayConfig || {}
   const theme          = OVERLAY_THEMES[cfg.theme] || OVERLAY_THEMES['navy-yellow']
+  const bgColorId      = cfg.bgColor || bgParam || 'green'
+  const isTransparent  = bgColorId === 'transparent'
+  const bgStyle        = isTransparent ? {} : { backgroundColor: BG_MAP[bgColorId] || '#00FF00' }
   const scale          = cfg.scale || 1.0
   const pos            = POSITIONS[cfg.position] || POSITIONS['top-left']
   const isRightAligned = cfg.position === 'top-right' || cfg.position === 'bottom-right'
@@ -82,8 +83,11 @@ const Overlay = () => {
   const serving   = score.serving as 'a' | 'b' | null | undefined
   const isDoubles = !!(players.teamA?.[1] || players.teamB?.[1])
 
-  const flag = (code: string) =>
-    code.toUpperCase().split('').map(c => String.fromCodePoint(c.charCodeAt(0) + 127397)).join('')
+  const BR_STATE_CODES = new Set(['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'])
+  const flag = (code: string) => {
+    if (BR_STATE_CODES.has(code.toUpperCase())) return '🇧🇷'
+    return code.toUpperCase().split('').map(c => String.fromCodePoint(c.charCodeAt(0) + 127397)).join('')
+  }
 
   const displayPts = (pts: number) => pts === 41 ? 'AD' : String(pts ?? 0)
 

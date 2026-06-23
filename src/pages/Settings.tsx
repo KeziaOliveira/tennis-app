@@ -97,15 +97,17 @@ export default function Settings() {
   const [whatsapp, setWhatsapp] = useState('')
   const [website, setWebsite] = useState('')
   const [publicEmail, setPublicEmail] = useState('')
+  const [offersMessage, setOffersMessage] = useState('')
 
   const [ovTheme, setOvTheme] = useState('navy-yellow')
   const [ovPosition, setOvPosition] = useState('top-left')
   const [ovScale, setOvScale] = useState(1.0)
+  const [ovBgColor, setOvBgColor] = useState<OverlayColor>(overlayColor)
   const [ovSaving, setOvSaving] = useState(false)
 
   const persistThemePref = (key: string, value: string) => {
     if (!user) return
-    supabase.auth.updateUser({ data: { ...user.user_metadata, [key]: value } }).catch(() => {})
+    supabase.auth.updateUser({ data: { [key]: value } }).catch(() => {})
   }
 
   const [openFaq, setOpenFaq] = useState<number | null>(null)
@@ -135,10 +137,12 @@ export default function Settings() {
       setWhatsapp(m.whatsapp || '')
       setWebsite(m.website || '')
       setPublicEmail(m.public_email || '')
+      setOffersMessage(m.offers_message || '')
       const oc = m.overlayConfig || {}
       setOvTheme(oc.theme || 'navy-yellow')
       setOvPosition(oc.position || 'top-left')
       setOvScale(oc.scale || 1.0)
+      setOvBgColor((oc.bgColor as OverlayColor) || overlayColor || 'green')
     })
   }, [navigate])
 
@@ -162,18 +166,19 @@ export default function Settings() {
     if (!user) return
     setSaving(true)
     try {
-      const meta = { ...user.user_metadata }
-      meta.full_name = displayName.trim()
-      meta.bio = bio.trim()
-      meta.instagram = instagram.trim()
-      meta.whatsapp = whatsapp.trim()
-      meta.website = website.trim()
-      meta.public_email = publicEmail.trim()
+      const updates: Record<string, unknown> = {
+        full_name: displayName.trim(),
+        bio: bio.trim(),
+        instagram: instagram.trim(),
+        whatsapp: whatsapp.trim(),
+        website: website.trim(),
+        public_email: publicEmail.trim(),
+        offers_message: offersMessage.trim(),
+      }
+      if (avatarFile) updates.avatar_url = await compressImage(avatarFile, 320, 320)
+      if (bannerFile) updates.banner_url = await compressImage(bannerFile, 1000, 333)
 
-      if (avatarFile) meta.avatar_url = await compressImage(avatarFile, 320, 320)
-      if (bannerFile) meta.banner_url = await compressImage(bannerFile, 1000, 333)
-
-      const { data, error } = await supabase.auth.updateUser({ data: meta })
+      const { data, error } = await supabase.auth.updateUser({ data: updates })
       if (error) throw error
       if (data.user) setUser(data.user)
       setAvatarFile(null)
@@ -203,8 +208,9 @@ export default function Settings() {
     if (!user) return
     setOvSaving(true)
     try {
-      const overlayConfig = { theme: ovTheme, position: ovPosition, scale: ovScale }
-      const { data, error } = await supabase.auth.updateUser({ data: { ...user.user_metadata, overlayConfig } })
+      const overlayConfig = { theme: ovTheme, position: ovPosition, scale: ovScale, bgColor: ovBgColor }
+      setOverlayColor(ovBgColor)
+      const { data, error } = await supabase.auth.updateUser({ data: { overlayConfig, overlayColor: ovBgColor } })
       if (error) throw error
       if (data.user) setUser(data.user)
 
@@ -440,6 +446,25 @@ export default function Settings() {
               </div>
             </section>
 
+            {/* Divulgação */}
+            <section className="space-y-4">
+              <p className="text-[10px] font-black uppercase tracking-widest text-text-muted border-b border-text/8 pb-2">Divulgação</p>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">Nossas Ofertas</p>
+                <textarea
+                  value={offersMessage}
+                  onChange={e => setOffersMessage(e.target.value.slice(0, 300))}
+                  placeholder="Ex: Inscrições abertas para a Copa Arena! Pacotes especiais para duplas. Garanta sua vaga."
+                  rows={3}
+                  className={`${inputCls} resize-none`}
+                />
+                <p className="text-[10px] text-text-muted text-right mt-1">{offersMessage.length}/300</p>
+                <p className="text-[10px] text-text-muted mt-1 leading-relaxed">
+                  Essa mensagem aparece como banner no seu Dashboard quando preenchida.
+                </p>
+              </div>
+            </section>
+
             {/* Contatos */}
             <section className="space-y-4">
               <p className="text-[10px] font-black uppercase tracking-widest text-text-muted border-b border-text/8 pb-2">Contatos</p>
@@ -653,11 +678,11 @@ export default function Settings() {
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {OVERLAY_COLORS.map((oc) => {
-                  const active = overlayColor === oc.id
+                  const active = ovBgColor === oc.id
                   return (
                     <button
                       key={oc.id}
-                      onClick={() => { setOverlayColor(oc.id as OverlayColor); persistThemePref('overlayColor', oc.id) }}
+                      onClick={() => setOvBgColor(oc.id as OverlayColor)}
                       className={`flex items-center gap-3 p-4 rounded-2xl border-2 text-left transition-all ${
                         active
                           ? 'border-primary bg-primary/8 shadow-md shadow-primary/10'
@@ -776,7 +801,7 @@ export default function Settings() {
                   className="rounded-xl overflow-hidden relative w-full"
                   style={{
                     aspectRatio: '16/9',
-                    backgroundColor: OVERLAY_COLORS.find(o => o.id === overlayColor)?.hex,
+                    backgroundColor: OVERLAY_COLORS.find(o => o.id === ovBgColor)?.hex,
                   }}
                 >
                   <div
@@ -889,11 +914,29 @@ export default function Settings() {
   )
 }
 
+const FaceSVG = ({ path, className }: { path: string; className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="currentColor" className={className}>
+    <path d={path} />
+  </svg>
+)
+
 const MOODS = [
-  { id: 'ruim',     emoji: '😕', label: 'Ruim' },
-  { id: 'regular',  emoji: '😐', label: 'Regular' },
-  { id: 'bom',      emoji: '😊', label: 'Bom' },
-  { id: 'incrivel', emoji: '🤩', label: 'Incrível' },
+  {
+    id: 'ruim', label: 'Ruim',
+    path: 'M320 112C434.9 112 528 205.1 528 320C528 434.9 434.9 528 320 528C205.1 528 112 434.9 112 320C112 205.1 205.1 112 320 112zM320 576C461.4 576 576 461.4 576 320C576 178.6 461.4 64 320 64C178.6 64 64 178.6 64 320C64 461.4 178.6 576 320 576zM320 432C344.1 432 365.4 443.8 378.5 462C386.2 472.8 401.2 475.2 412 467.5C422.8 459.8 425.2 444.8 417.5 434C395.8 403.8 360.2 384 320 384C279.8 384 244.3 403.8 222.5 434C214.8 444.8 217.2 459.8 228 467.5C238.8 475.2 253.8 472.8 261.5 462C274.6 443.8 295.9 432 320 432zM240 336C257.7 336 272 321.7 272 304L272 303.7L281.7 306.9C292.2 310.4 303.5 304.7 307 294.3C310.5 283.9 304.8 272.5 294.4 269L198.4 237C187.9 233.5 176.6 239.2 173.1 249.6C169.6 260 175.3 271.4 185.7 274.9L214.6 284.5C210.5 289.9 208 296.6 208 303.9C208 321.6 222.3 335.9 240 335.9zM432 304C432 296.7 429.6 290 425.4 284.6L454.3 275C464.8 271.5 470.4 260.2 466.9 249.7C463.4 239.2 452.1 233.6 441.6 237.1L345.6 269.1C335.1 272.6 329.5 283.9 333 294.4C336.5 304.9 347.8 310.5 358.3 307L368 303.8L368 304.1C368 321.8 382.3 336.1 400 336.1C417.7 336.1 432 321.8 432 304.1z',
+  },
+  {
+    id: 'regular', label: 'Regular',
+    path: 'M528 320C528 434.9 434.9 528 320 528C205.1 528 112 434.9 112 320C112 205.1 205.1 112 320 112C434.9 112 528 205.1 528 320zM320 64C178.6 64 64 178.6 64 320C64 461.4 178.6 576 320 576C461.4 576 576 461.4 576 320C576 178.6 461.4 64 320 64zM240 304C257.7 304 272 289.7 272 272C272 254.3 257.7 240 240 240C222.3 240 208 254.3 208 272C208 289.7 222.3 304 240 304zM432 272C432 254.3 417.7 240 400 240C382.3 240 368 254.3 368 272C368 289.7 382.3 304 400 304C417.7 304 432 289.7 432 272zM248 384C234.7 384 224 394.7 224 408C224 421.3 234.7 432 248 432L392 432C405.3 432 416 421.3 416 408C416 394.7 405.3 384 392 384L248 384z',
+  },
+  {
+    id: 'bom', label: 'Bom',
+    path: 'M528 320C528 205.1 434.9 112 320 112C205.1 112 112 205.1 112 320C112 434.9 205.1 528 320 528C434.9 528 528 434.9 528 320zM64 320C64 178.6 178.6 64 320 64C461.4 64 576 178.6 576 320C576 461.4 461.4 576 320 576C178.6 576 64 461.4 64 320zM241.3 383.4C256.3 399 282.4 416 320 416C357.6 416 383.7 399 398.7 383.4C407.9 373.8 423.1 373.5 432.6 382.7C442.1 391.9 442.5 407.1 433.3 416.6C411.2 439.6 373.3 464 320 464C266.7 464 228.8 439.6 206.7 416.6C197.5 407 197.8 391.8 207.4 382.7C217 373.6 232.2 373.8 241.3 383.4zM240 244C224.5 244 212 256.5 212 272L212 280C212 291 203 300 192 300C181 300 172 291 172 280L172 272C172 234.4 202.4 204 240 204C277.6 204 308 234.4 308 272L308 280C308 291 299 300 288 300C277 300 268 291 268 280L268 272C268 256.5 255.5 244 240 244zM372 272L372 280C372 291 363 300 352 300C341 300 332 291 332 280L332 272C332 234.4 362.4 204 400 204C437.6 204 468 234.4 468 272L468 280C468 291 459 300 448 300C437 300 428 291 428 280L428 272C428 256.5 415.5 244 400 244C384.5 244 372 256.5 372 272z',
+  },
+  {
+    id: 'incrivel', label: 'Incrível',
+    path: 'M528 320C528 205.1 434.9 112 320 112C205.1 112 112 205.1 112 320C112 434.9 205.1 528 320 528C434.9 528 528 434.9 528 320zM64 320C64 178.6 178.6 64 320 64C461.4 64 576 178.6 576 320C576 461.4 461.4 576 320 576C178.6 576 64 461.4 64 320zM189.2 396.4C182.7 382.4 194.2 368 209.6 368L430.4 368C445.8 368 457.2 382.4 450.8 396.4C428 445.8 378 480 320 480C262 480 212.1 445.8 189.2 396.4zM186.6 223.2C191.1 216.4 199.9 214 207.2 217.7L286.8 257.7C292.2 260.4 295.6 265.9 295.6 272C295.6 278.1 292.2 283.6 286.8 286.3L207.2 326.3C199.9 329.9 191.1 327.6 186.6 320.8C182.1 314 183.5 304.9 189.7 299.7L223 272L189.8 244.3C183.6 239.1 182.2 230 186.7 223.2zM450.2 244.3L417 272L450.2 299.7C456.4 304.9 457.8 314 453.3 320.8C448.8 327.6 440 330 432.7 326.3L353.1 286.3C347.7 283.6 344.3 278.1 344.3 272C344.3 265.9 347.7 260.4 353.1 257.7L432.7 217.7C440 214.1 448.8 216.4 453.3 223.2C457.8 230 456.4 239.1 450.2 244.3z',
+  },
 ]
 
 function FeedbackBlock({
@@ -950,7 +993,7 @@ function FeedbackBlock({
                 Como você avalia o sistema?
               </p>
               <div className="grid grid-cols-4 gap-2">
-                {MOODS.map(({ id, emoji, label }) => {
+                {MOODS.map(({ id, path, label }) => {
                   const active = mood === id
                   return (
                     <button
@@ -962,7 +1005,7 @@ function FeedbackBlock({
                           : 'border-text/10 hover:border-primary/30 hover:bg-text/5 hover:scale-105'
                       }`}
                     >
-                      <span className="text-2xl leading-none">{emoji}</span>
+                      <FaceSVG path={path} className={`w-8 h-8 ${active ? 'text-primary' : 'text-text-muted'}`} />
                       <span className={`text-[10px] font-black uppercase tracking-wider ${active ? 'text-primary' : 'text-text-muted'}`}>
                         {label}
                       </span>

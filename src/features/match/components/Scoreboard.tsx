@@ -34,7 +34,7 @@ const LinkIcon = (props: React.SVGProps<SVGSVGElement>) => (
 const Scoreboard = () => {
   const { matchId } = useParams()
   const navigate = useNavigate()
-  const { theme, setTheme } = useTheme()
+  const { theme, setTheme, overlayColor } = useTheme()
   const [isStatsOpen, setIsStatsOpen] = useState(false)
   const { 
     score, 
@@ -114,9 +114,10 @@ const Scoreboard = () => {
   }
 
   const copyOverlayLink = () => {
-    const link = `${window.location.origin}/overlay/${matchId}`
+    const bg = settings?.overlayConfig?.bgColor || overlayColor || 'green'
+    const link = `${window.location.origin}/overlay/${matchId}?bg=${bg}`
     navigator.clipboard.writeText(link)
-    toast.success('Link do Overlay copiado!')
+    toast.success('Link do Placar copiado!')
   }
 
   const handleFinish = async () => {
@@ -137,7 +138,11 @@ const Scoreboard = () => {
 
   const players = settings?.players || { teamA: ['Time A'], teamB: ['Time B'] }
   const countries = settings?.players?.countries
-  const flag = (code: string) => code.toUpperCase().split('').map(c => String.fromCodePoint(c.charCodeAt(0) + 127397)).join('')
+  const BR_STATE_CODES = new Set(['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'])
+  const flag = (code: string) => {
+    if (BR_STATE_CODES.has(code.toUpperCase())) return '🇧🇷'
+    return code.toUpperCase().split('').map(c => String.fromCodePoint(c.charCodeAt(0) + 127397)).join('')
+  }
   const displayPts = (pts: number) => pts === 41 ? 'AD' : (pts ?? 0)
 
   if (loading) return <div className="flex h-screen items-center justify-center font-black animate-pulse uppercase tracking-[0.3em]">Sincronizando...</div>
@@ -247,7 +252,7 @@ const Scoreboard = () => {
       <main className="flex-1 min-h-0 flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-surface/20 relative">
         {/* Active Message Banner */}
         {settings?.activeMessage && (
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 animate-in zoom-in-95 fade-in duration-300 w-full max-w-xl px-4 pointer-events-none">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 md:top-auto md:bottom-8 md:translate-y-0 z-50 animate-in zoom-in-95 fade-in duration-300 w-full max-w-xl px-4 pointer-events-none">
             <div className="bg-[#FFEA00]/90 backdrop-blur-md text-black/90 font-black uppercase italic tracking-tighter text-2xl md:text-3xl py-3 px-8 text-center rounded-2xl shadow-[0_10px_40px_rgba(255,234,0,0.3)] border border-[#FFEA00]/50">
               {settings.activeMessage}
             </div>
@@ -303,7 +308,7 @@ const Scoreboard = () => {
 
           {/* Score button (direita) */}
           <button
-            onClick={() => addPointAction('a')}
+            onClick={() => { addPointAction('a'); if (settings?.autoOpenStats && settings?.statsEnabled) setIsStatsOpen(true) }}
             disabled={status === 'finished'}
             className="flex-1 flex items-center justify-center active:bg-primary/10 transition-colors disabled:opacity-50"
           >
@@ -317,7 +322,7 @@ const Scoreboard = () => {
         <div className="flex-1 min-h-0 flex flex-row relative overflow-hidden bg-surface/5">
           {/* Score button (esquerda — espelho do time A) */}
           <button
-            onClick={() => addPointAction('b')}
+            onClick={() => { addPointAction('b'); if (settings?.autoOpenStats && settings?.statsEnabled) setIsStatsOpen(true) }}
             disabled={status === 'finished'}
             className="flex-1 flex items-center justify-center active:bg-accent/10 transition-colors disabled:opacity-50"
           >
@@ -381,7 +386,7 @@ const Scoreboard = () => {
           className="flex-1 flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl bg-background border border-text/8 hover:border-primary/30 hover:bg-primary/5 transition-all active:scale-95"
         >
           <LinkIcon className="w-5 h-5 fill-current text-primary" />
-          <span className="text-[10px] font-black uppercase tracking-widest text-text-muted">Copiar Link</span>
+          <span className="text-[10px] font-black uppercase tracking-widest text-text-muted">Link do Placar</span>
         </button>
         {settings?.statsEnabled !== false && (
           <button
@@ -449,7 +454,7 @@ const Scoreboard = () => {
                 className="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl bg-background hover:bg-background/60 border border-text/5 transition-all active:scale-[0.98]"
               >
                 <LinkIcon className="w-5 h-5 fill-current text-primary shrink-0" />
-                <span className="font-black uppercase text-sm tracking-tight">Copiar link do overlay</span>
+                <span className="font-black uppercase text-sm tracking-tight">Copiar link do placar</span>
               </button>
 
               {settings?.statsEnabled !== false && (

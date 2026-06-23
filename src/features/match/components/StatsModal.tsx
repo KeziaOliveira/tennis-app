@@ -14,12 +14,12 @@ interface StatsModalProps {
 
 const SERVING_ACTIONS = [
   'ACE', 'ERRO SAQUE', 'WINNER', 'ACELERADA', 'SMASH IN', 'SMASH OUT',
-  'E.N.F.', 'LOB VENCEDOR', 'LOB FORA', 'CURTA VENCEDORA', 'CURTA ERRADA',
+  'E.N.F.', 'LOB VENCEDOR', 'LOB FORA', 'CURTA VENCEDORA', 'CURTA ERRADA', 'NENHUMA',
 ]
 
 const RETURNING_ACTIONS = [
   'E.N.F.', 'ERRO DEVOL.', 'WINNER DEVOL.', 'WINNER', 'SMASH IN', 'SMASH OUT',
-  'ACELERADA', 'LOB VENC.', 'LOB FORA', 'CURTA VENC.', 'CURTA ERRADA', 'NONE',
+  'ACELERADA', 'LOB VENC.', 'LOB FORA', 'CURTA VENC.', 'CURTA ERRADA', 'NENHUMA',
 ]
 
 // BREAK POINT e IGUAIS removidos: não são calculáveis a partir dos dados de ação registrados
@@ -108,7 +108,7 @@ export default function StatsModal({ matchId, isOpen, onClose, settings, current
   const [servingPlayer, setServingPlayer] = useState<string | null>(null)
   const [servingAction, setServingAction] = useState<string | null>(null)
   const [returningPlayer, setReturningPlayer] = useState<string | null>(null)
-  const [returningAction, setReturningAction] = useState<string>('NONE')
+  const [returningAction, setReturningAction] = useState<string>('NENHUMA')
 
   const [activeTab, setActiveTab] = useState<'registrar' | 'overlay'>('registrar')
 
@@ -222,7 +222,7 @@ export default function StatsModal({ matchId, isOpen, onClose, settings, current
         setSentAt(Date.now())
         setSentDuration(7000)
       }
-      setServingPlayer(null); setServingAction(null); setReturningPlayer(null); setReturningAction('NONE')
+      setServingPlayer(null); setServingAction(null); setReturningPlayer(null); setReturningAction('NENHUMA')
       if (!autoFlash) onClose()
     }
   }

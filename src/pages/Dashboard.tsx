@@ -4,6 +4,7 @@ import { Plus, LogOut, BarChart3, Timer, User as UserIcon, Settings } from 'luci
 import { useNavigate } from 'react-router'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import { toast } from 'sonner'
+import { useTheme } from '../theme/theme-provider'
 
 const SunIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" {...props}>
@@ -67,7 +68,9 @@ const IconBtn = ({
 
 const MatchCard = ({ match, onRefresh }: { match: any, onRefresh: () => void }) => {
   const navigate = useNavigate()
+  const { overlayColor } = useTheme()
   const [elapsed, setElapsed] = useState(0)
+  const [confirmModal, setConfirmModal] = useState<'finish' | 'delete' | null>(null)
 
   useEffect(() => {
     let interval: any
@@ -92,38 +95,37 @@ const MatchCard = ({ match, onRefresh }: { match: any, onRefresh: () => void }) 
 
   const copyOverlay = (e: React.MouseEvent) => {
     e.stopPropagation()
-    const bg = localStorage.getItem('scoreboard-bt-overlay') || 'green'
+    const bg = match.settings?.overlayConfig?.bgColor || overlayColor || 'green'
     const link = `${window.location.origin}/overlay/${match.id}?bg=${bg}`
     navigator.clipboard.writeText(link)
     toast.success('Link do Overlay copiado!')
   }
 
-  const finishMatch = async (e: React.MouseEvent) => {
+  const finishMatch = (e: React.MouseEvent) => {
     e.stopPropagation()
-    if (!confirm('Deseja realmente finalizar esta partida?')) return
-    
-    await supabase.from('matches').update({ 
-      status: 'finished', 
+    setConfirmModal('finish')
+  }
+
+  const deleteMatch = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setConfirmModal('delete')
+  }
+
+  const doFinishMatch = async () => {
+    await supabase.from('matches').update({
+      status: 'finished',
       is_running: false,
       paused_at: new Date().toISOString()
     }).eq('id', match.id)
-    
     onRefresh()
     toast.success('Partida finalizada!')
   }
 
-  const deleteMatch = async (e: React.MouseEvent) => {
-    e.stopPropagation()
-    if (!confirm('Deseja realmente apagar esta partida permanentemente?')) return
-
+  const doDeleteMatch = async () => {
     try {
-      // First delete dependent points
       await supabase.from('points').delete().eq('match_id', match.id)
-      
-      // Then delete the match itself
       const { error } = await supabase.from('matches').delete().eq('id', match.id)
       if (error) throw error
-
       onRefresh()
       toast.success('Partida removida!')
     } catch (err: any) {
@@ -143,10 +145,12 @@ const MatchCard = ({ match, onRefresh }: { match: any, onRefresh: () => void }) 
           <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em] opacity-70 truncate">
             {match.settings?.tournamentName || 'Arena Central'}
           </span>
-          <div className="flex items-center gap-1.5 text-text-muted">
-             <Timer className="w-3.5 h-3.5" />
-             <span className="text-xs font-mono font-bold">{formatTime(elapsed)}</span>
-          </div>
+          {match.settings?.timerEnabled !== false && (
+            <div className="flex items-center gap-1.5 text-text-muted">
+              <Timer className="w-3.5 h-3.5" />
+              <span className="text-xs font-mono font-bold">{formatTime(elapsed)}</span>
+            </div>
+          )}
         </div>
 
         {/* Right: Badge only */}
@@ -164,7 +168,7 @@ const MatchCard = ({ match, onRefresh }: { match: any, onRefresh: () => void }) 
         </div>
       </div>
 
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex justify-between items-center mb-4">
          <div className="text-center flex-1 min-w-0">
             <p className="text-[10px] font-black uppercase text-text-muted mb-1 truncate">
               {match.settings?.players?.teamA?.join(' / ') || 'Time A'}
@@ -206,6 +210,55 @@ const MatchCard = ({ match, onRefresh }: { match: any, onRefresh: () => void }) 
           </IconBtn>
         </div>
       </div>
+
+      {confirmModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => setConfirmModal(null)}
+        >
+          <div
+            className="bg-surface w-full max-w-sm rounded-[2rem] border border-text/10 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex flex-col items-center px-8 pt-8 pb-6 text-center">
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 bg-error/10">
+                {confirmModal === 'finish'
+                  ? <TrophyIcon className="w-8 h-8 fill-current text-error" />
+                  : <TrashIcon className="w-8 h-8 fill-current text-error" />
+                }
+              </div>
+              <h2 className="text-xl font-black uppercase italic tracking-tighter text-text mb-2">
+                {confirmModal === 'finish' ? 'Finalizar Partida' : 'Apagar Partida'}
+              </h2>
+              <p className="text-sm text-text-muted leading-relaxed">
+                {confirmModal === 'finish'
+                  ? 'A partida será encerrada definitivamente. Esta ação não pode ser revertida.'
+                  : 'A partida será apagada permanentemente. Esta ação não pode ser desfeita.'
+                }
+              </p>
+            </div>
+            <div className="flex gap-3 px-8 pb-8">
+              <button
+                onClick={() => setConfirmModal(null)}
+                className="flex-1 py-3 rounded-xl bg-text/5 hover:bg-text/10 text-text font-black uppercase text-sm transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={async () => {
+                  const action = confirmModal
+                  setConfirmModal(null)
+                  if (action === 'finish') await doFinishMatch()
+                  else await doDeleteMatch()
+                }}
+                className="flex-1 py-3 rounded-xl font-black uppercase text-sm transition-all shadow-lg bg-error hover:bg-error/90 text-white shadow-error/20"
+              >
+                {confirmModal === 'finish' ? 'Finalizar' : 'Apagar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -313,17 +366,64 @@ const Dashboard = () => {
               }`}
             >
               <BarChart3 className="w-5 h-5" />
-              {showSavedStatsOnly ? 'TODAS AS PARTIDAS' : 'ESTATÍSTICAS SALVAS'}
+              {showSavedStatsOnly ? 'MY SCOREBOARDS BT' : 'MY ANÁLISES BT'}
             </button>
             <button
               onClick={createMatch}
               className="flex items-center justify-center gap-3 bg-primary text-primary-foreground px-8 py-4 rounded-3xl font-black uppercase italic shadow-2xl shadow-primary/30 hover:scale-[1.02] active:scale-[0.98] transition-all whitespace-nowrap text-lg"
             >
               <Plus className="w-6 h-6" />
-              Nova Partida
+              Novo Evento
             </button>
           </div>
         </div>
+
+        {/* ── Banner de Divulgação (só aparece se configurado) ── */}
+        {(() => {
+          const m = user?.user_metadata || {}
+          const offers = m.offers_message?.trim()
+          const ig = m.instagram?.trim()
+          const wa = m.whatsapp?.trim()
+          const ws = m.website?.trim()
+          const em = m.public_email?.trim()
+          const hasContent = !!(offers || ig || wa || ws || em)
+          if (!hasContent) return null
+          return (
+            <div className="bg-surface border border-primary/15 rounded-3xl px-6 py-5 flex flex-col sm:flex-row gap-4 items-start sm:items-center shadow-sm">
+              {offers && (
+                <p className="text-sm font-semibold text-text leading-relaxed flex-1">{offers}</p>
+              )}
+              {(ig || wa || ws || em) && (
+                <div className="flex flex-wrap items-center gap-3 shrink-0">
+                  {ig && (
+                    <a href={`https://instagram.com/${ig}`} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-primary hover:underline">
+                      <span>📷</span> @{ig}
+                    </a>
+                  )}
+                  {wa && (
+                    <a href={`https://wa.me/${wa.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-primary hover:underline">
+                      <span>📱</span> WhatsApp
+                    </a>
+                  )}
+                  {ws && (
+                    <a href={ws} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-primary hover:underline">
+                      <span>🌐</span> Site
+                    </a>
+                  )}
+                  {em && (
+                    <a href={`mailto:${em}`}
+                      className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-primary hover:underline">
+                      <span>✉️</span> {em}
+                    </a>
+                  )}
+                </div>
+              )}
+            </div>
+          )
+        })()}
 
         {/* Matches / Stats Grid */}
         {!showSavedStatsOnly ? (
@@ -353,15 +453,15 @@ const Dashboard = () => {
                        <th className="px-6 py-4">Data</th>
                        <th className="px-6 py-4">Duração</th>
                        <th className="px-6 py-4">Placar</th>
-                       <th className="px-6 py-4">Métrica Salva</th>
-                       <th className="px-6 py-4">Contexto</th>
+                       <th className="px-6 py-4">Times</th>
+                       <th className="px-6 py-4">Salvo em</th>
                        <th className="px-6 py-4 text-right">Ação</th>
                     </tr>
                  </thead>
                  <tbody className="divide-y divide-text/5 text-sm font-semibold">
                     {matches.flatMap(m => (m.settings?.saved_stats || []).map((s: any) => ({ match: m, stat: s }))).length === 0 ? (
                        <tr>
-                          <td colSpan={7} className="px-6 py-12 text-center text-text-muted italic font-bold">Nenhuma estatística salva encontrada.</td>
+                          <td colSpan={7} className="px-6 py-12 text-center text-text-muted italic font-bold">Nenhuma análise salva. Abra uma partida, vá em Análises e clique em Salvar.</td>
                        </tr>
                     ) : (
                        matches.flatMap(m => (m.settings?.saved_stats || []).map((s: any) => ({ match: m, stat: s }))).map(({match, stat}: any, idx) => {
@@ -374,7 +474,7 @@ const Dashboard = () => {
                           const timeStr = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
 
                           return (
-                            <tr key={`${match.id}-${stat.id}-${idx}`} className="hover:bg-text/5 transition-colors group cursor-pointer" onClick={() => setSelectedStat({ match, stat })}>
+                            <tr key={`${match.id}-${stat.id}-${idx}`} className="hover:bg-text/5 transition-colors group cursor-pointer" onClick={() => navigate(`/match/${match.id}/stats`)}>
                                <td className="px-6 py-4 font-black italic uppercase text-primary truncate max-w-[150px]">{match.settings?.tournamentName || 'Partida Sem Nome'}</td>
                                <td className="px-6 py-4 text-text-muted">{date}</td>
                                <td className="px-6 py-4 font-mono">{timeStr}</td>
@@ -383,10 +483,10 @@ const Dashboard = () => {
                                   <span className="mx-1 text-text-muted opacity-50">x</span>
                                   <span className="text-accent">{match.score?.games?.b ?? match.score?.teamB?.games ?? 0}</span>
                                </td>
-                               <td className="px-6 py-4 font-black text-text uppercase">{stat.label}</td>
-                               <td className="px-6 py-4 text-text-muted uppercase text-xs truncate max-w-[200px]">{stat.context}</td>
+                               <td className="px-6 py-4 text-text-muted text-xs truncate max-w-[200px]">{stat.context}</td>
+                               <td className="px-6 py-4 text-text-muted text-xs">{stat.savedAt ? new Date(stat.savedAt).toLocaleString() : date}</td>
                                <td className="px-6 py-4 text-right">
-                                  <button onClick={(e) => { e.stopPropagation(); setSelectedStat({ match, stat }); }} className="text-[10px] bg-primary/10 text-primary px-3 py-1.5 rounded-lg font-black uppercase hover:bg-primary/20 transition-all">Ver</button>
+                                  <button onClick={(e) => { e.stopPropagation(); navigate(`/match/${match.id}/stats`) }} className="text-[10px] bg-primary/10 text-primary px-3 py-1.5 rounded-lg font-black uppercase hover:bg-primary/20 transition-all">Ver Análise</button>
                                </td>
                             </tr>
                           )
@@ -404,7 +504,7 @@ const Dashboard = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
            <div className="bg-surface w-full max-w-lg rounded-[2rem] border border-text/10 shadow-2xl p-8 animate-in zoom-in-95 duration-300">
               <div className="flex justify-between items-center mb-6">
-                 <h2 className="text-2xl font-black italic uppercase text-text">Estatística Salva</h2>
+                 <h2 className="text-2xl font-black italic uppercase text-text">Análise Salva</h2>
                  <button onClick={() => setSelectedStat(null)} className="w-8 h-8 flex items-center justify-center rounded-full bg-text/5 hover:bg-text/10 text-text transition-colors">✕</button>
               </div>
               
