@@ -94,7 +94,7 @@ const INITIAL_TIMER: TimerState = {
   isRunning: false
 }
 
-let messageTimeout: NodeJS.Timeout | null = null;
+let messageTimeout: ReturnType<typeof setTimeout> | null = null;
 
 export const useMatchStore = create<MatchState>((set, get) => ({
   matchId: null,

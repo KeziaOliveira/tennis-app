@@ -222,7 +222,7 @@ const Overlay = () => {
             <div className="flex items-center gap-2 px-4 py-3" style={{ background: 'rgba(0,0,0,0.3)' }}>
               {/* Team A — accent color */}
               <div className="flex-1 flex flex-col gap-0.5 min-w-0">
-                {players.teamA.filter(Boolean).map((name, i) => (
+                {players.teamA.filter(Boolean).map((name: string, i: number) => (
                   <span key={i} className="font-black italic uppercase truncate" style={{ fontSize: 10, letterSpacing: '0.08em', color: theme.accent }}>
                     {name}
                   </span>
@@ -241,7 +241,7 @@ const Overlay = () => {
               )}
               {/* Team B — white */}
               <div className="flex-1 flex flex-col gap-0.5 items-end min-w-0">
-                {players.teamB.filter(Boolean).map((name, i) => (
+                {players.teamB.filter(Boolean).map((name: string, i: number) => (
                   <span key={i} className="font-black italic uppercase truncate" style={{ fontSize: 10, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.85)' }}>
                     {name}
                   </span>

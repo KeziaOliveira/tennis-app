@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 import {
-  AlertTriangle, Camera, ChevronDown, ChevronLeft,
+  Camera, ChevronDown, ChevronLeft,
   Check, Globe, HelpCircle, Instagram, Mail, Monitor,
-  Moon, Phone, Send, Shield, Sun, Trash2, Upload, User,
+  Moon, Phone, Send, Sun, Trash2, Upload, User,
 } from 'lucide-react'
 import { supabase } from '../services/supabase/client'
 import { toast } from 'sonner'
@@ -236,7 +236,8 @@ export default function Settings() {
     if (!feedbackMood || !feedbackMessage.trim()) return
     setFeedbackSending(true)
     try {
-      const { error } = await supabase.from('feedback').insert({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any).from('feedback').insert({
         user_id: user?.id,
         user_email: user?.email,
         mood: feedbackMood,
@@ -471,11 +472,11 @@ export default function Settings() {
               <div className="grid sm:grid-cols-2 gap-4">
                 {(
                   [
-                    { label: 'Instagram', Icon: Instagram, value: instagram, set: (v: string) => setInstagram(v.replace('@', '')), placeholder: 'seuusuario', prefix: '@', type: 'text' },
-                    { label: 'WhatsApp', Icon: Phone, value: whatsapp, set: setWhatsapp, placeholder: '+55 (11) 99999-9999', type: 'tel' },
-                    { label: 'Website', Icon: Globe, value: website, set: setWebsite, placeholder: 'https://seusite.com.br', type: 'url' },
-                    { label: 'E-mail público', Icon: Mail, value: publicEmail, set: setPublicEmail, placeholder: 'contato@dominio.com', type: 'email' },
-                  ] as const
+                    { label: 'Instagram', Icon: Instagram, value: instagram, set: (v: string) => setInstagram(v.replace('@', '')), placeholder: 'seuusuario', prefix: '@' as string | undefined, type: 'text' },
+                    { label: 'WhatsApp', Icon: Phone, value: whatsapp, set: setWhatsapp, placeholder: '+55 (11) 99999-9999', prefix: undefined as string | undefined, type: 'tel' },
+                    { label: 'Website', Icon: Globe, value: website, set: setWebsite, placeholder: 'https://seusite.com.br', prefix: undefined as string | undefined, type: 'url' },
+                    { label: 'E-mail público', Icon: Mail, value: publicEmail, set: setPublicEmail, placeholder: 'contato@dominio.com', prefix: undefined as string | undefined, type: 'email' },
+                  ]
                 ).map(({ label, Icon, value, set, placeholder, prefix, type }) => (
                   <div key={label}>
                     <p className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">

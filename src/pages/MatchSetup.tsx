@@ -244,7 +244,6 @@ export default function MatchSetup() {
         .from('matches')
         .insert({
           tournament_id: tournamentId,
-          user_id: user?.id,
           status: 'live',
           settings: {
             ...settings,
@@ -315,7 +314,7 @@ export default function MatchSetup() {
       {/* Page content */}
       <main className="max-w-7xl mx-auto px-6 py-10 space-y-6">
         {/* Title */}
-        <div className="flex items-end justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div>
             <h1 className="text-5xl font-black italic uppercase tracking-tighter leading-none mb-2">Novo Evento</h1>
             <p className="text-base text-text-muted font-medium">Configure os times e regras da partida</p>
@@ -323,7 +322,7 @@ export default function MatchSetup() {
           <button
             onClick={handleStartMatch}
             disabled={loading}
-            className="flex items-center gap-2.5 bg-primary text-primary-foreground px-8 py-3.5 rounded-3xl font-black uppercase italic text-base shadow-xl shadow-primary/25 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:scale-100 whitespace-nowrap"
+            className="flex items-center justify-center gap-2.5 bg-primary text-primary-foreground px-8 py-3.5 rounded-3xl font-black uppercase italic text-base shadow-xl shadow-primary/25 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:scale-100 whitespace-nowrap sm:w-auto w-full"
           >
             {loading ? (
               <span className="animate-pulse">Criando...</span>

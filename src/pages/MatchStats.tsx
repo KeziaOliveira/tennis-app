@@ -4,7 +4,6 @@ import { supabase } from '../services/supabase/client'
 import { ChevronLeft, Clock, Hash, Zap, Target, AlertTriangle, TrendingUp, Activity, Users, MessageSquare, Bookmark } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, AreaChart, Area, PieChart, Pie, Legend } from 'recharts'
 import { toast } from 'sonner'
-import { useMatchStore } from '../store/matchStore'
 import { useTheme } from '../theme/theme-provider'
 
 // Action strings exactly as recorded by StatsModal
@@ -24,12 +23,11 @@ export default function MatchStats() {
   // Filters
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null)
   const [selectedTeam, setSelectedTeam] = useState<'A' | 'B' | null>(null)
-  const [timeFilter, setTimeFilter] = useState<'all' | 15 | 30 | 60 | 90>('all')
+  const [timeFilter] = useState<'all' | 15 | 30 | 60 | 90>('all')
   const [setFilter, setSetFilter] = useState<'all' | 1 | 2 | 3>('all')
   
   // Messages state
   const [showMessages, setShowMessages] = useState(false)
-  const { setActiveMessage } = useMatchStore()
   const { colorTheme, theme } = useTheme()
   const [primaryColor, setPrimaryColor] = useState('#0ea5e9')
   const [accentColor, setAccentColor] = useState('#f59e0b')
@@ -229,29 +227,23 @@ export default function MatchStats() {
   let chartLabelB: string
   let chartColorA: string
   let chartColorB: string
-  let chartTitle: string
-  let chartSubtitle: string | null = null
 
   if (isPlayerMode) {
     chartLabelA = 'Saque'
     chartLabelB = 'Devolução'
     chartColorA = primaryColor
     chartColorB = '#22c55e'
-    chartTitle = 'Saque vs Devolução'
-    chartSubtitle = selectedPlayerName
   } else if (isTeamMode) {
     const currentPlayers = selectedTeam === 'A' ? teamA : teamB
     chartLabelA = currentPlayers[0] || 'Atleta 1'
     chartLabelB = currentPlayers[1] || 'Atleta 2'
     chartColorA = selectedTeam === 'A' ? primaryColor : accentColor
     chartColorB = selectedTeam === 'A' ? primaryColor + 'aa' : accentColor + 'aa'
-    chartTitle = selectedTeam === 'A' ? `${teamLabelA} — por Atleta` : `${teamLabelB} — por Atleta`
   } else {
     chartLabelA = teamLabelA
     chartLabelB = teamLabelB
     chartColorA = primaryColor
     chartColorB = accentColor
-    chartTitle = 'Comparação de Duplas'
   }
 
   // --- Momentum Chart Data ---
@@ -314,95 +306,6 @@ export default function MatchStats() {
       )
     }
     return null
-  }
-
-  const handleShowOverlayStat = async (label: string, value: number) => {
-    if (!matchId || !match) return
-    const contextName = selectedPlayerName || (selectedTeam ? (selectedTeam === 'A' ? teamLabelA : teamLabelB) : 'Geral')
-    
-    // Se for time especifico, exibe o painel de duplas
-    if (selectedTeam && !selectedPlayer) {
-      const currentTeamPlayers = selectedTeam === 'A' ? teamAPlayers : teamBPlayers
-      
-      let val0 = 0, val1 = 0
-      
-      filteredStats.forEach(s => {
-         const meta = s.metadata || {}
-         const sa = meta.serving_action || ''
-         const ra = meta.returning_action || ''
-         const sp = meta.serving_player || ''
-         const rp = meta.returning_player || ''
-         
-         const isP0 = (p: string) => p === currentTeamPlayers[0]
-         const isP1 = (p: string) => p === currentTeamPlayers[1]
-
-         const isWinner = (a: string) => a.includes('VENC') || a === 'ACE' || a === 'SMASH IN'
-         const isError = (a: string) => a.includes('ERRO') || a.includes('OUT') || a.includes('ERRADA') || a.includes('FALTA')
-         
-         if (label === 'ACES' && sa === 'ACE') {
-            if (isP0(sp)) val0++; if (isP1(sp)) val1++;
-         }
-         if (label === 'WINNERS') {
-            if (isWinner(sa)) { if (isP0(sp)) val0++; if (isP1(sp)) val1++; }
-            if (isWinner(ra)) { if (isP0(rp)) val0++; if (isP1(rp)) val1++; }
-         }
-         if (label === 'ERROS') {
-            if (isError(sa)) { if (isP0(sp)) val0++; if (isP1(sp)) val1++; }
-            if (isError(ra)) { if (isP0(rp)) val0++; if (isP1(rp)) val1++; }
-         }
-         if (label === 'RALLIES') {
-            val0++; val1++;
-         }
-      })
-
-      if (label === 'RALLIES') {
-         val0 = totalRallies; val1 = totalRallies;
-      }
-
-      const newSettings = {
-        ...match.settings,
-        activeStatPanel: {
-          type: 'doubles',
-          statLabel: `${label} - ${selectedTeam === 'A' ? teamLabelA : teamLabelB}`,
-          teamAValue: val0.toString(),
-          teamBValue: val1.toString()
-        },
-        showFullStats: false,
-        activeMessage: null
-      }
-      await supabase.from('matches').update({ settings: newSettings as any }).eq('id', matchId)
-    } else {
-      const newSettings = {
-        ...match.settings,
-        activeStatPanel: {
-          type: 'individual',
-          statLabel: label,
-          player: contextName,
-          value: value.toString()
-        },
-        showFullStats: false,
-        activeMessage: null
-      }
-      await supabase.from('matches').update({ settings: newSettings as any }).eq('id', matchId)
-    }
-
-    toast.success(`Estatística enviada ao overlay!`)
-
-    // Auto-hide after 15 seconds
-    setTimeout(async () => {
-       const { data } = await supabase.from('matches').select('settings').eq('id', matchId).single()
-       if (data && data.settings) {
-         const updatedSettings = { ...data.settings, activeStatPanel: null }
-         await supabase.from('matches').update({ settings: updatedSettings as any }).eq('id', matchId)
-       }
-    }, 15000)
-  }
-
-  const handleHideOverlayStat = async () => {
-    if (!matchId || !match) return
-    const newSettings = { ...match.settings, activeStatPanel: null, showFullStats: false }
-    await supabase.from('matches').update({ settings: newSettings as any }).eq('id', matchId)
-    toast.success('Estatística removida do overlay.')
   }
 
   const handleSaveAnalysis = async () => {
@@ -503,7 +406,7 @@ export default function MatchStats() {
               <span className="w-2 h-2 rounded-full bg-primary"></span> {teamLabelA}
             </button>
 
-            {selectedTeam === 'A' && !showMessages && teamA.map((name, i) => {
+            {selectedTeam === 'A' && !showMessages && teamA.map((name: string, i: number) => {
               const pid = `${name}|A${i}`
               return (
                 <button
@@ -531,7 +434,7 @@ export default function MatchStats() {
               <span className="w-2 h-2 rounded-full bg-accent"></span> {teamLabelB}
             </button>
 
-            {selectedTeam === 'B' && !showMessages && teamB.map((name, i) => {
+            {selectedTeam === 'B' && !showMessages && teamB.map((name: string, i: number) => {
               const pid = `${name}|B${i}`
               return (
                 <button
@@ -682,7 +585,7 @@ export default function MatchStats() {
                       stroke="none"
                       cornerRadius={8}
                     >
-                      {donutData.map((entry, index) => (
+                      {donutData.map((_entry, index) => (
                         <Cell key={`cell-${index}`} fill={DONUT_COLORS[index % DONUT_COLORS.length]} />
                       ))}
                     </Pie>
