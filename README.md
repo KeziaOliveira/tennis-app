@@ -1,73 +1,96 @@
-# React + TypeScript + Vite
+# 🏆 ScoreboardBT
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> **Gestão profissional de placares para transmissões ao vivo.**
 
-Currently, two official plugins are available:
+Sistema web para operadores de placar criarem e controlarem partidas em tempo real, com overlay pronto para captura no OBS via browser source.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## React Compiler
+## Funcionalidades
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+**Gerenciamento de partidas**
+- Criação e edição de partidas com times, bandeiras e placares
+- Controle de tempo de jogo com cronômetro integrado
+- Estatísticas detalhadas por partida com gráficos
 
-## Expanding the ESLint configuration
+**Overlay para OBS**
+- URL pública por partida, sem necessidade de login
+- Atualização em tempo real via Supabase Realtime
+- 5 temas visuais: Padrão, P&B, Verde, Roxo, Laranja
+- Chroma key configurável (verde, magenta, azul, ciano, rosa)
+- Posicionamento livre na tela (4 cantos + centro)
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+**Conta e personalização**
+- Autenticação com e-mail e senha (Supabase Auth)
+- 6 temas de cor da interface: Sky, Emerald, Violet, Rose, Amber, Slate
+- Modo claro / escuro
+- Preferências salvas por usuário
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+---
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Stack
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+| Camada | Tecnologia |
+|---|---|
+| Framework | React 19 + TypeScript |
+| Build | Vite 7 |
+| Estilização | Tailwind CSS v4 |
+| Roteamento | React Router v7 |
+| Estado global | Zustand |
+| Backend / Auth | Supabase |
+| Storage | Firebase Storage |
+| Gráficos | Recharts |
+| Toasts | Sonner |
+
+---
+
+## Rodando localmente
+
+**Pré-requisitos:** Node.js 18+ e npm
+
+```bash
+# 1. Clone o repositório
+git clone https://github.com/seu-usuario/347-bttv.git
+cd 347-bttv
+
+# 2. Instale as dependências
+npm install
+
+# 3. Configure as variáveis de ambiente
+cp .env.example .env
+# Edite o .env com suas chaves do Supabase e Firebase
+
+# 4. Suba o servidor de desenvolvimento
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+**Variáveis necessárias no `.env`:**
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+```env
+VITE_SUPABASE_URL=
+VITE_SUPABASE_ANON_KEY=
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_STORAGE_BUCKET=
+```
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+---
+
+## Usando o overlay no OBS
+
+1. Acesse o Dashboard e inicie uma partida
+2. Copie o link de overlay gerado para aquela partida
+3. No OBS, adicione uma fonte **Browser** e cole o link
+4. Configure chroma key ou posição pela URL com os parâmetros `?bg=green&position=top-left`
+
+Qualquer atualização feita no placar reflete no overlay em tempo real, sem precisar recarregar.
+
+---
+
+## Scripts disponíveis
+
+```bash
+npm run dev      # Servidor de desenvolvimento
+npm run build    # Build de produção
+npm run preview  # Preview do build
+npm run lint     # Verificação de lint
 ```
